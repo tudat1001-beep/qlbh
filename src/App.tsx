@@ -15,7 +15,8 @@ import {
   Transaction,
   Quotation,
   SystemSettings,
-  AppUser
+  AppUser,
+  Store
 } from './types';
 import {
   INITIAL_PRODUCTS,
@@ -37,6 +38,7 @@ import TransactionManager from './components/TransactionManager';
 import ReportsManager from './components/ReportsManager';
 import QuotationManager from './components/QuotationManager';
 import SettingsManager from './components/SettingsManager';
+import SaaSAdminManager from './components/SaaSAdminManager';
 
 const DEFAULT_PERMISSION_MATRIX = {
   ACCOUNTANT: {
@@ -84,65 +86,99 @@ import {
   ArrowRight,
   Sparkles,
   ClipboardList,
-  Layers
+  Layers,
+  Shield
 } from 'lucide-react';
 
 export default function App() {
-  // State Initialization from LocalStorage
+  // --- SaaS Store and Tenant States ---
+  const [currentStoreId, setCurrentStoreId] = useState<string>(() => {
+    return localStorage.getItem('excel_erp_current_store_id') || 'store_default';
+  });
+
+  const [stores, setStores] = useState<Store[]>(() => {
+    const saved = localStorage.getItem('excel_erp_stores');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 'store_default',
+        name: 'Cửa Hàng Trung Tâm (Mặc Định)',
+        ownerName: 'Phạm Thanh Mai',
+        phone: '028 3845 6789',
+        email: 'admin@erp-saas.com',
+        status: 'ACTIVE',
+        expiryDate: '2030-12-31',
+        createdAt: '2026-06-01T00:00:00.000Z'
+      }
+    ];
+  });
+
+  // Whether the Super Admin is viewing the SaaS Control Panel or a specific store's ERP
+  const [isAdminViewingSaaS, setIsAdminViewingSaaS] = useState(true);
+
+  // State Initialization from LocalStorage partitioned by currentStoreId
   const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('excel_erp_products');
-    return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+    const saved = localStorage.getItem(`excel_erp_products_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_PRODUCTS : []);
   });
 
   const [warehouses, setWarehouses] = useState<Warehouse[]>(() => {
-    const saved = localStorage.getItem('excel_erp_warehouses');
-    return saved ? JSON.parse(saved) : INITIAL_WAREHOUSES;
+    const saved = localStorage.getItem(`excel_erp_warehouses_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_WAREHOUSES : []);
   });
 
   const [customers, setCustomers] = useState<Customer[]>(() => {
-    const saved = localStorage.getItem('excel_erp_customers');
-    return saved ? JSON.parse(saved) : INITIAL_CUSTOMERS;
+    const saved = localStorage.getItem(`excel_erp_customers_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_CUSTOMERS : []);
   });
 
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
-    const saved = localStorage.getItem('excel_erp_suppliers');
-    return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
+    const saved = localStorage.getItem(`excel_erp_suppliers_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_SUPPLIERS : []);
   });
 
   const [employees, setEmployees] = useState<Employee[]>(() => {
-    const saved = localStorage.getItem('excel_erp_employees');
-    return saved ? JSON.parse(saved) : INITIAL_EMPLOYEES;
+    const saved = localStorage.getItem(`excel_erp_employees_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_EMPLOYEES : []);
   });
 
   const [funds, setFunds] = useState<FundAccount[]>(() => {
-    const saved = localStorage.getItem('excel_erp_funds');
-    return saved ? JSON.parse(saved) : INITIAL_FUNDS;
+    const saved = localStorage.getItem(`excel_erp_funds_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_FUNDS : []);
   });
 
   const [categories, setCategories] = useState<TransactionCategory[]>(() => {
-    const saved = localStorage.getItem('excel_erp_categories');
-    return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+    const saved = localStorage.getItem(`excel_erp_categories_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_CATEGORIES : []);
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('excel_erp_transactions');
-    return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+    const saved = localStorage.getItem(`excel_erp_transactions_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_TRANSACTIONS : []);
   });
 
   const [quotations, setQuotations] = useState<Quotation[]>(() => {
-    const saved = localStorage.getItem('excel_erp_quotations');
-    return saved ? JSON.parse(saved) : INITIAL_QUOTATIONS;
+    const saved = localStorage.getItem(`excel_erp_quotations_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_QUOTATIONS : []);
   });
 
   const [settings, setSettings] = useState<SystemSettings>(() => {
-    const saved = localStorage.getItem('excel_erp_settings');
-    return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
+    const saved = localStorage.getItem(`excel_erp_settings_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_SETTINGS : {
+      ...INITIAL_SETTINGS,
+      enterprise: {
+        ...INITIAL_SETTINGS.enterprise,
+        name: `CỬA HÀNG THÀNH VIÊN`
+      }
+    });
   });
 
   // User Management and Session State
   const [users, setUsers] = useState<AppUser[]>(() => {
-    const saved = localStorage.getItem('excel_erp_users');
-    return saved ? JSON.parse(saved) : INITIAL_USERS;
+    const saved = localStorage.getItem(`excel_erp_users_${currentStoreId}`);
+    return saved ? JSON.parse(saved) : (currentStoreId === 'store_default' ? INITIAL_USERS : [
+      { id: `u_${Date.now()}_admin`, username: 'store_admin', fullName: 'Quản lý cửa hàng', role: 'ADMIN', password: '123', status: 'ACTIVE', storeId: currentStoreId }
+    ]);
   });
 
   const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
@@ -166,50 +202,116 @@ export default function App() {
   const [stickyNotes, setStickyNotes] = useState<string[]>([]);
   const [newStickyNote, setNewStickyNote] = useState('');
 
+  // Partitioned Store Switcher Helper
+  const handleSwitchStore = (storeId: string) => {
+    // 1. Save current active store state
+    localStorage.setItem(`excel_erp_products_${currentStoreId}`, JSON.stringify(products));
+    localStorage.setItem(`excel_erp_warehouses_${currentStoreId}`, JSON.stringify(warehouses));
+    localStorage.setItem(`excel_erp_customers_${currentStoreId}`, JSON.stringify(customers));
+    localStorage.setItem(`excel_erp_suppliers_${currentStoreId}`, JSON.stringify(suppliers));
+    localStorage.setItem(`excel_erp_employees_${currentStoreId}`, JSON.stringify(employees));
+    localStorage.setItem(`excel_erp_funds_${currentStoreId}`, JSON.stringify(funds));
+    localStorage.setItem(`excel_erp_categories_${currentStoreId}`, JSON.stringify(categories));
+    localStorage.setItem(`excel_erp_transactions_${currentStoreId}`, JSON.stringify(transactions));
+    localStorage.setItem(`excel_erp_quotations_${currentStoreId}`, JSON.stringify(quotations));
+    localStorage.setItem(`excel_erp_settings_${currentStoreId}`, JSON.stringify(settings));
+    localStorage.setItem(`excel_erp_users_${currentStoreId}`, JSON.stringify(users));
+
+    // 2. Set new active store ID
+    setCurrentStoreId(storeId);
+    localStorage.setItem('excel_erp_current_store_id', storeId);
+
+    // 3. Load next active store state (using fallback datasets if new store)
+    const p = localStorage.getItem(`excel_erp_products_${storeId}`);
+    setProducts(p ? JSON.parse(p) : (storeId === 'store_default' ? INITIAL_PRODUCTS : []));
+
+    const w = localStorage.getItem(`excel_erp_warehouses_${storeId}`);
+    setWarehouses(w ? JSON.parse(w) : (storeId === 'store_default' ? INITIAL_WAREHOUSES : []));
+
+    const c = localStorage.getItem(`excel_erp_customers_${storeId}`);
+    setCustomers(c ? JSON.parse(c) : (storeId === 'store_default' ? INITIAL_CUSTOMERS : []));
+
+    const s = localStorage.getItem(`excel_erp_suppliers_${storeId}`);
+    setSuppliers(s ? JSON.parse(s) : (storeId === 'store_default' ? INITIAL_SUPPLIERS : []));
+
+    const e = localStorage.getItem(`excel_erp_employees_${storeId}`);
+    setEmployees(e ? JSON.parse(e) : (storeId === 'store_default' ? INITIAL_EMPLOYEES : []));
+
+    const f = localStorage.getItem(`excel_erp_funds_${storeId}`);
+    setFunds(f ? JSON.parse(f) : (storeId === 'store_default' ? INITIAL_FUNDS : []));
+
+    const cat = localStorage.getItem(`excel_erp_categories_${storeId}`);
+    setCategories(cat ? JSON.parse(cat) : (storeId === 'store_default' ? INITIAL_CATEGORIES : []));
+
+    const t = localStorage.getItem(`excel_erp_transactions_${storeId}`);
+    setTransactions(t ? JSON.parse(t) : (storeId === 'store_default' ? INITIAL_TRANSACTIONS : []));
+
+    const q = localStorage.getItem(`excel_erp_quotations_${storeId}`);
+    setQuotations(q ? JSON.parse(q) : (storeId === 'store_default' ? INITIAL_QUOTATIONS : []));
+
+    const set = localStorage.getItem(`excel_erp_settings_${storeId}`);
+    setSettings(set ? JSON.parse(set) : (storeId === 'store_default' ? INITIAL_SETTINGS : {
+      ...INITIAL_SETTINGS,
+      enterprise: {
+        ...INITIAL_SETTINGS.enterprise,
+        name: `CỬA HÀNG THÀNH VIÊN`
+      }
+    }));
+
+    const us = localStorage.getItem(`excel_erp_users_${storeId}`);
+    setUsers(us ? JSON.parse(us) : (storeId === 'store_default' ? INITIAL_USERS : [
+      { id: `u_${Date.now()}_admin`, username: 'store_admin', fullName: 'Quản lý cửa hàng', role: 'ADMIN', password: '123', status: 'ACTIVE', storeId: storeId }
+    ]));
+  };
+
   // Persist state to LocalStorage
   useEffect(() => {
-    localStorage.setItem('excel_erp_products', JSON.stringify(products));
-  }, [products]);
+    localStorage.setItem(`excel_erp_products_${currentStoreId}`, JSON.stringify(products));
+  }, [products, currentStoreId]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_warehouses', JSON.stringify(warehouses));
-  }, [warehouses]);
+    localStorage.setItem(`excel_erp_warehouses_${currentStoreId}`, JSON.stringify(warehouses));
+  }, [warehouses, currentStoreId]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_customers', JSON.stringify(customers));
-  }, [customers]);
+    localStorage.setItem(`excel_erp_customers_${currentStoreId}`, JSON.stringify(customers));
+  }, [customers, currentStoreId]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_suppliers', JSON.stringify(suppliers));
-  }, [suppliers]);
+    localStorage.setItem(`excel_erp_suppliers_${currentStoreId}`, JSON.stringify(suppliers));
+  }, [suppliers, currentStoreId]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_employees', JSON.stringify(employees));
-  }, [employees]);
+    localStorage.setItem(`excel_erp_employees_${currentStoreId}`, JSON.stringify(employees));
+  }, [employees, currentStoreId]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_funds', JSON.stringify(funds));
-  }, [funds]);
+    localStorage.setItem(`excel_erp_funds_${currentStoreId}`, JSON.stringify(funds));
+  }, [funds, currentStoreId]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_categories', JSON.stringify(categories));
-  }, [categories]);
+    localStorage.setItem(`excel_erp_categories_${currentStoreId}`, JSON.stringify(categories));
+  }, [categories, currentStoreId]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_transactions', JSON.stringify(transactions));
-  }, [transactions]);
+    localStorage.setItem(`excel_erp_transactions_${currentStoreId}`, JSON.stringify(transactions));
+  }, [transactions, currentStoreId]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_quotations', JSON.stringify(quotations));
-  }, [quotations]);
+    localStorage.setItem(`excel_erp_quotations_${currentStoreId}`, JSON.stringify(quotations));
+  }, [quotations, currentStoreId]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_settings', JSON.stringify(settings));
-  }, [settings]);
+    localStorage.setItem(`excel_erp_settings_${currentStoreId}`, JSON.stringify(settings));
+  }, [settings, currentStoreId]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_users', JSON.stringify(users));
-  }, [users]);
+    localStorage.setItem(`excel_erp_users_${currentStoreId}`, JSON.stringify(users));
+  }, [users, currentStoreId]);
+
+  useEffect(() => {
+    localStorage.setItem('excel_erp_stores', JSON.stringify(stores));
+  }, [stores]);
 
   useEffect(() => {
     if (currentUser) {
@@ -274,7 +376,8 @@ export default function App() {
     categories,
     transactions,
     quotations,
-    settings
+    settings,
+    users
   });
 
   const handleImportBackup = (imported: any) => {
@@ -291,6 +394,7 @@ export default function App() {
   };
 
   const handleResetDatabase = () => {
+    // 1. Reset all state arrays to empty lists
     setProducts([]);
     setWarehouses([]);
     setCustomers([]);
@@ -300,8 +404,47 @@ export default function App() {
     setCategories([]);
     setTransactions([]);
     setQuotations([]);
-    setSettings(INITIAL_SETTINGS);
-    localStorage.clear();
+    
+    // Save empty arrays to localStorage for current store so they don't load initialData on next refresh
+    localStorage.setItem(`excel_erp_products_${currentStoreId}`, '[]');
+    localStorage.setItem(`excel_erp_warehouses_${currentStoreId}`, '[]');
+    localStorage.setItem(`excel_erp_customers_${currentStoreId}`, '[]');
+    localStorage.setItem(`excel_erp_suppliers_${currentStoreId}`, '[]');
+    localStorage.setItem(`excel_erp_employees_${currentStoreId}`, '[]');
+    localStorage.setItem(`excel_erp_funds_${currentStoreId}`, '[]');
+    localStorage.setItem(`excel_erp_categories_${currentStoreId}`, '[]');
+    localStorage.setItem(`excel_erp_transactions_${currentStoreId}`, '[]');
+    localStorage.setItem(`excel_erp_quotations_${currentStoreId}`, '[]');
+
+    // Keep settings but reset them to non-sample defaults
+    const defaultSettings = {
+      ...INITIAL_SETTINGS,
+      enterprise: {
+        name: 'DOANH NGHIỆP TRUNG TÂM',
+        taxCode: '',
+        address: '',
+        phone: '',
+        email: '',
+        director: '',
+        chiefAccountant: ''
+      }
+    };
+    setSettings(defaultSettings);
+    localStorage.setItem(`excel_erp_settings_${currentStoreId}`, JSON.stringify(defaultSettings));
+
+    // Keep the current logged in user so they aren't locked out, but clear others
+    const defaultAdmin = { 
+      id: `u1`, 
+      username: 'mai.pt', 
+      fullName: 'Phạm Thanh Mai', 
+      role: 'ADMIN' as const, 
+      password: '123', 
+      status: 'ACTIVE' as const,
+      storeId: 'store_default'
+    };
+    const keptUsers = currentUser ? [currentUser] : [defaultAdmin];
+    setUsers(keptUsers);
+    localStorage.setItem(`excel_erp_users_${currentStoreId}`, JSON.stringify(keptUsers));
   };
 
   // Quick Dashboard Metrics Calculations
@@ -475,35 +618,91 @@ export default function App() {
                 <Layers className="h-8 w-8 text-white animate-pulse" />
               </div>
             </div>
-            <h1 className="text-lg font-extrabold tracking-wide uppercase font-sans">EXCEL ERP SYSTEM</h1>
-            <p className="text-green-100 text-[11px] font-mono mt-1">CỔNG ĐĂNG NHẬP THÔNG TIN VÀ PHÂN QUYỀN ERP</p>
+            <h1 className="text-lg font-extrabold tracking-wide uppercase font-sans">EXCEL ERP SAAS PLATFORM</h1>
+            <p className="text-green-100 text-[11px] font-mono mt-1">CỔNG ĐĂNG NHẬP HỆ THỐNG ERP</p>
           </div>
 
           {/* Body */}
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-5">
             <form onSubmit={(e) => {
               e.preventDefault();
               const form = e.currentTarget;
               const username = (form.elements.namedItem('username') as HTMLInputElement).value;
               const password = (form.elements.namedItem('password') as HTMLInputElement).value;
               
-              const user = users.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
-              if (!user) {
-                alert('Tên đăng nhập không đúng!');
-                return;
+              const trimmedUsername = username.trim().toLowerCase();
+              let user: AppUser | undefined;
+              let resolvedStoreId = currentStoreId;
+
+              if (trimmedUsername === 'admin') {
+                if (password !== '123') {
+                  alert('Mật khẩu Admin hệ thống không chính xác!');
+                  return;
+                }
+                user = {
+                  id: 'saas_super_admin',
+                  username: 'admin',
+                  fullName: 'SaaS System Admin',
+                  role: 'ADMIN',
+                  status: 'ACTIVE'
+                };
+              } else {
+                // Find user in all stores
+                for (const store of stores) {
+                  const savedUsersStr = localStorage.getItem(`excel_erp_users_${store.id}`);
+                  const storeUsers: AppUser[] = savedUsersStr 
+                    ? JSON.parse(savedUsersStr) 
+                    : (store.id === 'store_default' 
+                        ? INITIAL_USERS 
+                        : [{ id: `u_default_admin_${store.id}`, username: 'store_admin', fullName: 'Quản lý cửa hàng', role: 'ADMIN', password: '123', status: 'ACTIVE', storeId: store.id }]);
+                  
+                  const matched = storeUsers.find(u => u.username.toLowerCase() === trimmedUsername);
+                  if (matched) {
+                    user = matched;
+                    resolvedStoreId = store.id;
+                    break;
+                  }
+                }
+
+                if (!user) {
+                  alert('Tên đăng nhập không đúng hoặc không tồn tại trên hệ thống!');
+                  return;
+                }
+                if (user.status === 'INACTIVE') {
+                  alert('Tài khoản nhân viên này đã bị khóa!');
+                  return;
+                }
+                if (user.password !== password) {
+                  alert('Mật khẩu không chính xác!');
+                  return;
+                }
               }
-              if (user.status === 'INACTIVE') {
-                alert('Tài khoản nhân viên này đã bị khóa!');
-                return;
-              }
-              if (user.password !== password) {
-                alert('Mật khẩu không chính xác!');
-                return;
+
+              const isSaaSAdmin = user.username === 'admin';
+              if (!isSaaSAdmin) {
+                const selectedStore = stores.find(s => s.id === resolvedStoreId);
+                if (selectedStore && selectedStore.status === 'LOCKED') {
+                  alert('Cửa hàng này hiện đang bị khóa bản quyền! Vui lòng liên hệ nhà quản trị SaaS để mở khóa.');
+                  return;
+                }
+                const isExpired = selectedStore ? new Date(selectedStore.expiryDate) < new Date() : false;
+                if (isExpired) {
+                  alert(`Cửa hàng này đã hết hạn đăng ký bản quyền sử dụng (${selectedStore?.expiryDate})! Vui lòng liên hệ quản trị viên SaaS để gia hạn.`);
+                  return;
+                }
+
+                // Automatically load and switch context to this store
+                handleSwitchStore(resolvedStoreId);
               }
               
               setCurrentUser(user);
-              setActiveTab('BAN_HANG');
-              setSelectedView('DASHBOARD');
+              if (user.username === 'admin') {
+                setIsAdminViewingSaaS(true);
+              } else {
+                setIsAdminViewingSaaS(false);
+                setActiveTab('BAN_HANG');
+                setSelectedView('DASHBOARD');
+              }
             }} className="space-y-4">
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider">Tên đăng nhập</label>
@@ -511,7 +710,7 @@ export default function App() {
                   name="username"
                   type="text"
                   required
-                  placeholder="vd: mai.pt"
+                  placeholder="Nhập tên đăng nhập của bạn"
                   className="w-full text-xs p-3 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#107c41] focus:border-[#107c41] bg-slate-50 font-medium"
                 />
               </div>
@@ -534,45 +733,6 @@ export default function App() {
                 Đăng Nhập Hệ Thống
               </button>
             </form>
-
-            <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-gray-200"></div>
-              <span className="flex-shrink mx-3 text-gray-400 text-[10px] uppercase font-bold tracking-wider">Chọn Nhanh Nhân Viên Mẫu</span>
-              <div className="flex-grow border-t border-gray-200"></div>
-            </div>
-
-            {/* Quick profiles */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {users.map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => {
-                    setCurrentUser(u);
-                    setActiveTab('BAN_HANG');
-                    setSelectedView('DASHBOARD');
-                  }}
-                  className="p-2 border border-gray-200 rounded-md hover:border-green-500 hover:bg-green-50/50 transition-all text-left group flex flex-col justify-between cursor-pointer bg-white"
-                >
-                  <div>
-                    <div className="font-bold text-gray-800 text-[11px] truncate group-hover:text-green-700">{u.fullName}</div>
-                    <div className="text-[10px] text-gray-400 font-mono mt-0.5">user: {u.username}</div>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase ${
-                      u.role === 'ADMIN' ? 'bg-green-100 text-green-800' :
-                      u.role === 'ACCOUNTANT' ? 'bg-blue-100 text-blue-800' :
-                      u.role === 'SALES' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'
-                    }`}>
-                      {u.role === 'ADMIN' ? 'Kế toán trưởng' :
-                       u.role === 'ACCOUNTANT' ? 'Kế toán' :
-                       u.role === 'SALES' ? 'Bán hàng' : 'Thủ kho'}
-                    </span>
-                    <span className="text-[9px] text-green-600 font-bold group-hover:underline">Vào →</span>
-                  </div>
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Footer */}
@@ -586,8 +746,47 @@ export default function App() {
     );
   }
 
+  if (currentUser && currentUser.username === 'admin' && isAdminViewingSaaS) {
+    return (
+      <SaaSAdminManager
+        stores={stores}
+        setStores={setStores}
+        currentUser={currentUser}
+        onLogout={() => {
+          setCurrentUser(null);
+          setIsAdminViewingSaaS(true);
+        }}
+        excelTheme={excelTheme}
+        onSelectStoreERP={(storeId) => {
+          handleSwitchStore(storeId);
+          setIsAdminViewingSaaS(false);
+          setActiveTab('BAN_HANG');
+          setSelectedView('DASHBOARD');
+        }}
+        getERPDataSnapshot={exportDatabase}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans select-none text-slate-800" id="sales-management-app">
+      {/* Super Admin Back to SaaS bar */}
+      {currentUser?.username === 'admin' && (
+        <div className="bg-slate-950 text-slate-100 px-6 py-2.5 text-xs flex justify-between items-center border-b border-slate-800 shadow-sm font-sans">
+          <div className="flex items-center space-x-2 font-mono">
+            <span className="h-2 w-2 bg-emerald-500 rounded-full animate-ping"></span>
+            <span>Bạn đang giám sát dữ liệu ERP của cửa hàng: <strong className="text-emerald-400 font-bold">{stores.find(s => s.id === currentStoreId)?.name || currentStoreId}</strong></span>
+          </div>
+          <button
+            onClick={() => setIsAdminViewingSaaS(true)}
+            className="bg-emerald-500 hover:bg-emerald-600 border border-emerald-400/20 text-white font-extrabold px-3.5 py-1.5 rounded transition-all cursor-pointer text-[11px] shadow-sm flex items-center space-x-1"
+          >
+            <Shield className="h-3.5 w-3.5" />
+            <span>Quay lại Admin Panel</span>
+          </button>
+        </div>
+      )}
+
       {/* Excel Ribbon Control Bar */}
       <Ribbon
         activeTab={activeTab}

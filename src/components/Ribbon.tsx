@@ -203,7 +203,7 @@ export default function Ribbon({
       <div className={`${c.primary} text-white px-4 py-2 flex justify-between items-center font-medium shadow-sm transition-colors duration-200`}>
         <div className="flex items-center space-x-2">
           <Layers className="h-5 w-5 animate-pulse text-green-100" />
-          <span className="font-semibold text-sm tracking-wide">EXCEL ERP - PHẦN MỀM QUẢN LÝ BÁN HÀNG</span>
+          <span className="font-semibold text-sm tracking-wide">EXCEL ERP - PHẦN MỀM QUẢN LÝ BÁN HÀNG SaaS</span>
           <span className={`${c.badge} text-[10px] px-2 py-0.5 rounded text-white font-normal transition-colors duration-200`}>Chế độ Offline</span>
         </div>
         <div className="flex items-center space-x-4 text-[11px] text-slate-100">

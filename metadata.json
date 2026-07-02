@@ -1,6 +1,6 @@
 {
-  "name": "Quản lý Bán hàng",
-  "description": "Hệ thống quản lý bán hàng chuyên nghiệp với đầy đủ chức năng danh mục, nhập phát sinh, báo cáo chi tiết, báo cáo tổng hợp và cấu hình hệ thống.",
+  "name": "Quản lý Bán hàng SaaS",
+  "description": "Hệ thống quản lý bán hàng chuyên nghiệp hỗ trợ mô hình đa doanh nghiệp (SaaS) với đầy đủ chức năng danh mục, nhập phát sinh, báo cáo chi tiết, báo cáo tổng hợp và phân quyền nâng cao.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

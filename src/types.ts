@@ -138,6 +138,17 @@ export interface EnterpriseInfo {
 }
 
 // System Settings
+export interface Store {
+  id: string;
+  name: string;
+  ownerName: string;
+  phone: string;
+  email: string;
+  status: 'ACTIVE' | 'LOCKED';
+  expiryDate: string; // YYYY-MM-DD
+  createdAt: string;
+}
+
 export interface AppUser {
   id: string;
   username: string;
@@ -145,6 +156,7 @@ export interface AppUser {
   role: 'ADMIN' | 'ACCOUNTANT' | 'SALES' | 'STOREKEEPER';
   password?: string;
   status: 'ACTIVE' | 'INACTIVE';
+  storeId?: string; // Optional: empty or special ID for system Super Admin
 }
 
 export interface SystemSettings {
