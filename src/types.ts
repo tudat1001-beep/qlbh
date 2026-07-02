@@ -47,6 +47,9 @@ export interface Employee {
   name: string;
   position: string;
   department: string;
+  username?: string;
+  password?: string;
+  role?: 'ADMIN' | 'ACCOUNTANT' | 'SALES' | 'STOREKEEPER';
 }
 
 export interface FundAccount {

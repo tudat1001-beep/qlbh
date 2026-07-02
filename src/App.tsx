@@ -384,9 +384,56 @@ export default function App() {
   const handleEditSupplier = (item: Supplier) => setSuppliers(suppliers.map(s => s.id === item.id ? item : s));
   const handleDeleteSupplier = (id: string) => setSuppliers(suppliers.filter(s => s.id !== id));
 
-  const handleAddEmployee = (item: Employee) => setEmployees([...employees, item]);
-  const handleEditEmployee = (item: Employee) => setEmployees(employees.map(e => e.id === item.id ? item : e));
-  const handleDeleteEmployee = (id: string) => setEmployees(employees.filter(e => e.id !== id));
+  const handleAddEmployee = (item: Employee) => {
+    setEmployees([...employees, item]);
+    if (item.username) {
+      const newUser: AppUser = {
+        id: item.id,
+        username: item.username,
+        fullName: item.name,
+        role: item.role || 'SALES',
+        password: item.password || '123',
+        status: 'ACTIVE',
+        storeId: currentStoreId
+      };
+      if (!users.some(u => u.username.toLowerCase() === item.username?.toLowerCase())) {
+        setUsers(prev => [...prev, newUser]);
+      }
+    }
+  };
+  const handleEditEmployee = (item: Employee) => {
+    setEmployees(employees.map(e => e.id === item.id ? item : e));
+    if (item.username) {
+      setUsers(prev => {
+        const idx = prev.findIndex(u => u.id === item.id || u.username.toLowerCase() === item.username?.toLowerCase());
+        if (idx > -1) {
+          const updated = [...prev];
+          updated[idx] = {
+            ...updated[idx],
+            username: item.username || updated[idx].username,
+            fullName: item.name,
+            role: item.role || updated[idx].role,
+            password: item.password || updated[idx].password
+          };
+          return updated;
+        } else {
+          return [...prev, {
+            id: item.id,
+            username: item.username || '',
+            fullName: item.name,
+            role: item.role || 'SALES',
+            password: item.password || '123',
+            status: 'ACTIVE',
+            storeId: currentStoreId
+          }];
+        }
+      });
+    }
+  };
+  const handleDeleteEmployee = (id: string) => {
+    setEmployees(employees.filter(e => e.id !== id));
+    setUsers(prev => prev.filter(u => u.id !== id));
+  };
 
   const handleAddFund = (item: FundAccount) => setFunds([...funds, item]);
   const handleEditFund = (item: FundAccount) => setFunds(funds.map(f => f.id === item.id ? item : f));

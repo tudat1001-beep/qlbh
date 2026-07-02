@@ -149,7 +149,7 @@ export default function Ribbon({
       return !!matrix.enterprise_setup;
     }
     if (target === 'DM_NHAN_VIEN') {
-      return !!(matrix.sales || matrix.purchases || matrix.financial_reports || matrix.system_setup);
+      return false;
     }
     if (['CD_QUAN_LY_QUYEN', 'CD_DOI_MAT_KHAU', 'CD_SAO_LUU', 'CD_KHOI_PHUC', 'CD_RESET_DATA'].includes(target)) {
       return !!matrix.system_setup;

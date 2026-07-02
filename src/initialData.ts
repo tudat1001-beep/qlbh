@@ -44,9 +44,9 @@ export const INITIAL_SUPPLIERS: Supplier[] = [
 ];
 
 export const INITIAL_EMPLOYEES: Employee[] = [
-  { id: 'e1', code: 'NV001', name: 'Trần Thị Thu Thảo', position: 'Trưởng phòng Kinh doanh', department: 'Phòng Kinh Doanh' },
-  { id: 'e2', code: 'NV002', name: 'Lê Văn Nam', position: 'Nhân viên bán hàng', department: 'Phòng Kinh Doanh' },
-  { id: 'e3', code: 'NV003', name: 'Nguyễn Minh Quân', position: 'Nhân viên kho', department: 'Bộ phận Kho' }
+  { id: 'e1', code: 'NV001', name: 'Trần Thị Thu Thảo', position: 'Trưởng phòng Kinh doanh', department: 'Phòng Kinh Doanh', username: 'thao.ttt', password: '123', role: 'ACCOUNTANT' },
+  { id: 'e2', code: 'NV002', name: 'Lê Văn Nam', position: 'Nhân viên bán hàng', department: 'Phòng Kinh Doanh', username: 'nam.lv', password: '123', role: 'SALES' },
+  { id: 'e3', code: 'NV003', name: 'Nguyễn Minh Quân', position: 'Nhân viên kho', department: 'Bộ phận Kho', username: 'quan.nm', password: '123', role: 'STOREKEEPER' }
 ];
 
 export const INITIAL_FUNDS: FundAccount[] = [

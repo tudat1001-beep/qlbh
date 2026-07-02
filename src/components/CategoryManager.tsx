@@ -347,7 +347,7 @@ export default function CategoryManager({
           </h2>
           <p className="text-[11px] text-gray-500 mt-0.5">Quản lý và cập nhật cơ sở dữ liệu danh mục để phục vụ hạch toán, báo cáo.</p>
         </div>
-        {!(view === 'DM_NHAN_VIEN' && currentUser?.role !== 'ADMIN' && currentUser?.role !== 'ACCOUNTANT') && (
+        {!(view === 'DM_NHAN_VIEN' && currentUser?.role !== 'ADMIN') && (
           <button
             onClick={openAddModal}
             className={`${theme.accent} text-xs font-semibold px-3 py-1.5 rounded shadow-sm flex items-center space-x-1 transition-all`}
@@ -449,8 +449,11 @@ export default function CategoryManager({
                 )}
                 {view === 'DM_NHAN_VIEN' && (
                   <>
-                    <th className="px-3 py-2 border-r border-gray-200 w-44">Chức Vụ</th>
-                    <th className="px-3 py-2 border-r border-gray-200 w-44">Phòng Ban / Bộ Phận</th>
+                    <th className="px-3 py-2 border-r border-gray-200 w-36">Chức Vụ</th>
+                    <th className="px-3 py-2 border-r border-gray-200 w-36">Phòng Ban / Bộ Phận</th>
+                    <th className="px-3 py-2 border-r border-gray-200 w-32">Tên Đăng Nhập</th>
+                    <th className="px-3 py-2 border-r border-gray-200 w-32">Mật Khẩu</th>
+                    <th className="px-3 py-2 border-r border-gray-200 w-36">Quyền Truy Cập</th>
                   </>
                 )}
                 {view === 'DM_QUY_TAI_KHOAN' && (
@@ -522,6 +525,23 @@ export default function CategoryManager({
                       <>
                         <td className="px-3 py-2 border-r border-gray-200">{item.position}</td>
                         <td className="px-3 py-2 border-r border-gray-200">{item.department}</td>
+                        <td className="px-3 py-2 border-r border-gray-200 font-mono font-bold text-gray-800">{item.username || <span className="text-gray-400 italic">Chưa tạo</span>}</td>
+                        <td className="px-3 py-2 border-r border-gray-200 font-mono text-gray-500">{item.password || '—'}</td>
+                        <td className="px-3 py-2 border-r border-gray-200">
+                          {item.role ? (
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase ${
+                              item.role === 'ADMIN' ? 'bg-[#107c41]' :
+                              item.role === 'ACCOUNTANT' ? 'bg-blue-600' :
+                              item.role === 'SALES' ? 'bg-amber-500' : 'bg-purple-600'
+                            }`}>
+                              {item.role === 'ADMIN' ? 'Kế toán trưởng' :
+                               item.role === 'ACCOUNTANT' ? 'Kế toán viên' :
+                               item.role === 'SALES' ? 'Bán hàng' : 'Thủ kho'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-[10px] italic">Không có</span>
+                          )}
+                        </td>
                       </>
                     )}
                     {view === 'DM_QUY_TAI_KHOAN' && (
@@ -543,7 +563,7 @@ export default function CategoryManager({
                       </td>
                     )}
                     <td className="px-3 py-2 text-center flex items-center justify-center space-x-1.5">
-                      {!(view === 'DM_NHAN_VIEN' && currentUser?.role !== 'ADMIN' && currentUser?.role !== 'ACCOUNTANT') ? (
+                      {!(view === 'DM_NHAN_VIEN' && currentUser?.role !== 'ADMIN') ? (
                         <>
                           <button
                             onClick={() => openEditModal(item)}
@@ -743,28 +763,71 @@ export default function CategoryManager({
               )}
 
               {view === 'DM_NHAN_VIEN' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-500 mb-1">CHỨC VỤ ĐẢM NHIỆM</label>
-                    <input
-                      type="text"
-                      required
-                      value={formFields.position || ''}
-                      onChange={(e) => setFormFields({ ...formFields, position: e.target.value })}
-                      className={`w-full text-xs p-2 border border-gray-300 rounded focus:ring-1 ${focusRing}`}
-                    />
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 mb-1">CHỨC VỤ ĐẢM NHIỆM</label>
+                      <input
+                        type="text"
+                        required
+                        value={formFields.position || ''}
+                        onChange={(e) => setFormFields({ ...formFields, position: e.target.value })}
+                        className={`w-full text-xs p-2 border border-gray-300 rounded focus:ring-1 ${focusRing}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 mb-1">PHÒNG BAN / BỘ PHẬN</label>
+                      <input
+                        type="text"
+                        required
+                        value={formFields.department || ''}
+                        onChange={(e) => setFormFields({ ...formFields, department: e.target.value })}
+                        className={`w-full text-xs p-2 border border-gray-300 rounded focus:ring-1 ${focusRing}`}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-500 mb-1">PHÒNG BAN / BỘ PHẬN</label>
-                    <input
-                      type="text"
-                      required
-                      value={formFields.department || ''}
-                      onChange={(e) => setFormFields({ ...formFields, department: e.target.value })}
-                      className={`w-full text-xs p-2 border border-gray-300 rounded focus:ring-1 ${focusRing}`}
-                    />
+
+                  <div className="border-t border-dashed border-gray-200 pt-3 mt-1">
+                    <span className="block text-[10px] font-bold text-gray-700 uppercase tracking-wide mb-2">🔐 TÀI KHOẢN ĐĂNG NHẬP HỆ THỐNG</span>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-500 mb-1">TÊN ĐĂNG NHẬP</label>
+                        <input
+                          type="text"
+                          required
+                          value={formFields.username || ''}
+                          onChange={(e) => setFormFields({ ...formFields, username: e.target.value.toLowerCase().replace(/\s+/g, '') })}
+                          placeholder="vd: nam.lv"
+                          className={`w-full text-xs p-2 border border-gray-300 rounded focus:ring-1 ${focusRing}`}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-500 mb-1">MẬT KHẨU</label>
+                        <input
+                          type="text"
+                          required
+                          value={formFields.password || ''}
+                          onChange={(e) => setFormFields({ ...formFields, password: e.target.value })}
+                          placeholder="Nhập mật khẩu"
+                          className={`w-full text-xs p-2 border border-gray-300 rounded focus:ring-1 ${focusRing}`}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-500 mb-1">QUYỀN TRUY CẬP</label>
+                        <select
+                          value={formFields.role || 'SALES'}
+                          onChange={(e) => setFormFields({ ...formFields, role: e.target.value })}
+                          className={`w-full text-xs p-2 border border-gray-300 rounded bg-white focus:ring-1 ${focusRing}`}
+                        >
+                          <option value="ACCOUNTANT">Kế toán viên (Full)</option>
+                          <option value="SALES">Nhân viên bán hàng</option>
+                          <option value="STOREKEEPER">Thủ kho</option>
+                          <option value="ADMIN">Kế toán trưởng (Admin)</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
 
               {view === 'DM_QUY_TAI_KHOAN' && (
