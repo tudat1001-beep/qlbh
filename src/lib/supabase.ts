@@ -278,6 +278,13 @@ CREATE POLICY "Allow all on settings" ON public.settings FOR ALL USING (true);
 INSERT INTO public.stores (id, name, owner_name, phone, email, status, expiry_date)
 VALUES ('store_default', 'Cửa Hàng Trung Tâm (Mặc Định)', 'Phạm Thanh Mai', '028 3845 6789', 'admin@erp-saas.com', 'ACTIVE', '2030-12-31')
 ON CONFLICT (id) DO NOTHING;
+
+-- CẤP QUYỀN TRUY CẬP CHO API (SỬA LỖI PERMISSION DENIED CHO TABLES)
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
 `;
 };
 

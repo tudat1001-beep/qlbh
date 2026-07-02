@@ -885,8 +885,15 @@ export default function SaaSAdminManager({
               </div>
 
               <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
-                Hệ thống hỗ trợ <strong>Supabase</strong> làm hệ quản trị cơ sở dữ liệu SQL đám mây. Bạn có thể sao chép câu lệnh khởi tạo bảng (DDL) để cài đặt cấu trúc bảng trong Supabase chỉ với một cú nhấp chuột.
+                Hệ thống hỗ trợ <strong>Supabase</strong> làm hệ quản trị cơ sở dữ liệu SQL đám mây. Bạn có thể sao chép câu lệnh khởi tạo bảng (DDL) để cài đặt cấu trúc bảng và cấp quyền truy cập đầy đủ trong Supabase chỉ với một cú nhấp chuột.
               </p>
+
+              <div className="p-3 bg-amber-950/20 border border-amber-800/40 text-amber-200 text-[10px] rounded leading-relaxed font-sans flex items-start space-x-1.5">
+                <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong>Sửa lỗi "Permission Denied" (Lỗi phân quyền):</strong> Nếu gặp lỗi <code>permission denied for table stores</code>, đó là do bạn chưa cấp đủ quyền truy cập bảng cho khóa công khai (API key anon). Script SQL bên dưới đã được bổ sung đầy đủ các lệnh <code>GRANT USAGE/ALL</code> để tự động cấu hình phân quyền hoàn hảo. Hãy sao chép và chạy lại toàn bộ mã SQL mới này trong SQL Editor của Supabase.
+                </span>
+              </div>
 
               <div className="text-[10px] bg-slate-900 border border-slate-800 p-3 rounded font-mono max-h-40 overflow-y-auto text-slate-300 space-y-1 scrollbar-thin">
                 <pre className="text-emerald-400">// SQL Schema Preview</pre>
