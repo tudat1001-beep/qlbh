@@ -39,6 +39,7 @@ import ReportsManager from './components/ReportsManager';
 import QuotationManager from './components/QuotationManager';
 import SettingsManager from './components/SettingsManager';
 import SaaSAdminManager from './components/SaaSAdminManager';
+import { isSupabaseConfigured, getSupabase, dbFetchStores, dbFetchAllUsers } from './lib/supabase';
 
 const DEFAULT_PERMISSION_MATRIX = {
   ACCOUNTANT: {
@@ -325,6 +326,47 @@ export default function App() {
     localStorage.setItem('excel_erp_permission_matrix', JSON.stringify(permissionMatrix));
   }, [permissionMatrix]);
 
+  // Pre-fetch all stores and users from Supabase on mount to prevent lockouts on new machines
+  useEffect(() => {
+    const initSaaSData = async () => {
+      if (isSupabaseConfigured()) {
+        try {
+          const cloudStores = await dbFetchStores();
+          if (cloudStores.length > 0) {
+            setStores(cloudStores);
+            localStorage.setItem('excel_erp_stores', JSON.stringify(cloudStores));
+          }
+          const cloudUsers = await dbFetchAllUsers();
+          if (cloudUsers.length > 0) {
+            // Group users by storeId
+            const usersByStore: { [storeId: string]: AppUser[] } = {};
+            cloudUsers.forEach(u => {
+              if (u.storeId) {
+                if (!usersByStore[u.storeId]) {
+                  usersByStore[u.storeId] = [];
+                }
+                usersByStore[u.storeId].push(u);
+              }
+            });
+            // Persist to localStorage partitions
+            Object.entries(usersByStore).forEach(([storeId, storeUsersList]) => {
+              localStorage.setItem(`excel_erp_users_${storeId}`, JSON.stringify(storeUsersList));
+            });
+            
+            // Also update the current users list if it matches currentStoreId
+            const currentStoreUsers = usersByStore[currentStoreId];
+            if (currentStoreUsers) {
+              setUsers(currentStoreUsers);
+            }
+          }
+        } catch (err) {
+          console.warn('Lỗi đồng bộ dữ liệu SaaS ban đầu từ Supabase:', err);
+        }
+      }
+    };
+    initSaaSData();
+  }, [currentStoreId]);
+
   // Master Data Add/Edit/Delete Handlers
   const handleAddProduct = (item: Product) => setProducts([...products, item]);
   const handleEditProduct = (item: Product) => setProducts(products.map(p => p.id === item.id ? item : p));
@@ -445,6 +487,28 @@ export default function App() {
     const keptUsers = currentUser ? [currentUser] : [defaultAdmin];
     setUsers(keptUsers);
     localStorage.setItem(`excel_erp_users_${currentStoreId}`, JSON.stringify(keptUsers));
+
+    // 2. Best-effort clear in Supabase Cloud for current store only
+    if (isSupabaseConfigured()) {
+      const sb = getSupabase();
+      if (sb) {
+        Promise.all([
+          sb.from('products').delete().eq('store_id', currentStoreId),
+          sb.from('warehouses').delete().eq('store_id', currentStoreId),
+          sb.from('customers').delete().eq('store_id', currentStoreId),
+          sb.from('suppliers').delete().eq('store_id', currentStoreId),
+          sb.from('employees').delete().eq('store_id', currentStoreId),
+          sb.from('funds').delete().eq('store_id', currentStoreId),
+          sb.from('categories').delete().eq('store_id', currentStoreId),
+          sb.from('transactions').delete().eq('store_id', currentStoreId),
+          sb.from('quotations').delete().eq('store_id', currentStoreId),
+        ]).then(() => {
+          console.log(`Đã reset dữ liệu cloud của cửa hàng: ${currentStoreId}`);
+        }).catch(err => {
+          console.warn('Lỗi khi dọn dẹp dữ liệu đám mây:', err);
+        });
+      }
+    }
   };
 
   // Quick Dashboard Metrics Calculations
@@ -624,7 +688,7 @@ export default function App() {
 
           {/* Body */}
           <div className="p-6 space-y-5">
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const form = e.currentTarget;
               const username = (form.elements.namedItem('username') as HTMLInputElement).value;
@@ -633,6 +697,41 @@ export default function App() {
               const trimmedUsername = username.trim().toLowerCase();
               let user: AppUser | undefined;
               let resolvedStoreId = currentStoreId;
+
+              // Force dynamic fetch of latest stores and users from Cloud to ensure smooth login on new devices
+              let activeStoresList = stores;
+              if (isSupabaseConfigured()) {
+                try {
+                  const cloudStores = await dbFetchStores();
+                  if (cloudStores.length > 0) {
+                    setStores(cloudStores);
+                    activeStoresList = cloudStores;
+                    localStorage.setItem('excel_erp_stores', JSON.stringify(cloudStores));
+                  }
+                  const cloudUsers = await dbFetchAllUsers();
+                  if (cloudUsers.length > 0) {
+                    const usersByStore: { [storeId: string]: AppUser[] } = {};
+                    cloudUsers.forEach(u => {
+                      if (u.storeId) {
+                        if (!usersByStore[u.storeId]) {
+                          usersByStore[u.storeId] = [];
+                        }
+                        usersByStore[u.storeId].push(u);
+                      }
+                    });
+                    Object.entries(usersByStore).forEach(([storeId, storeUsersList]) => {
+                      localStorage.setItem(`excel_erp_users_${storeId}`, JSON.stringify(storeUsersList));
+                    });
+                    
+                    const currentStoreUsers = usersByStore[currentStoreId];
+                    if (currentStoreUsers) {
+                      setUsers(currentStoreUsers);
+                    }
+                  }
+                } catch (err) {
+                  console.warn('Lỗi đồng bộ dữ liệu cloud khi đăng nhập:', err);
+                }
+              }
 
               if (trimmedUsername === 'admin') {
                 if (password !== '123') {
@@ -648,7 +747,7 @@ export default function App() {
                 };
               } else {
                 // Find user in all stores
-                for (const store of stores) {
+                for (const store of activeStoresList) {
                   const savedUsersStr = localStorage.getItem(`excel_erp_users_${store.id}`);
                   const storeUsers: AppUser[] = savedUsersStr 
                     ? JSON.parse(savedUsersStr) 

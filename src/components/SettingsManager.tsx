@@ -907,27 +907,6 @@ export default function SettingsManager({
         </div>
       )}
 
-      {/* 6. BẢN QUYỀN PHẦN MỀM */}
-      {view === 'CD_BAN_QUYEN' && (
-        <div className="bg-white rounded border border-gray-200 shadow-sm p-8 text-center space-y-6">
-          <div className="max-w-md mx-auto">
-            <div className={`inline-block p-3 ${theme.bg} rounded-full mb-3 ${theme.text}`}>
-              <Shield className="h-12 w-12" />
-            </div>
-            <h3 className="text-base font-extrabold text-gray-800 tracking-tight uppercase">EXCEL ERP SALES SOFTWARE</h3>
-            <p className="text-xs text-gray-500 font-mono mt-1">Phiên Bản 2026.1.0 LTS (Ổn Định Chính Thức)</p>
-
-            <div className="bg-gray-50 p-4 border border-gray-200 rounded mt-6 text-left space-y-2 text-gray-600 leading-relaxed text-[11px]">
-              <div>• <strong>Giấy phép:</strong> Bản quyền vĩnh viễn cấp cho <strong>{settings.enterprise.name}</strong>.</div>
-              <div>• <strong>Công nghệ:</strong> Thiết kế chuẩn Custom UI Ribbon, mô phỏng Excel hoàn chỉnh chạy trực tuyến offline-first bảo mật tuyệt đối.</div>
-              <div>• <strong>Nhà phát triển:</strong> Google AI Studio Partner.</div>
-              <div className="pt-2 border-t border-gray-200 text-center text-gray-400 font-mono text-[10px]">
-                MÃ BẢN QUYỀN: AISTUDIO-BUILD-2026-X99F-P999
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -173,7 +173,7 @@ export default function Ribbon({
     }
 
     if (tab === 'CAI_DAT') {
-      const cdViews = ['CD_THONG_TIN_DN', 'CD_BAN_QUYEN', 'CD_LAM_TRON', 'CD_QUAN_LY_QUYEN', 'CD_DOI_MAT_KHAU', 'CD_SAO_LUU', 'CD_KHOI_PHUC', 'CD_RESET_DATA'];
+      const cdViews = ['CD_THONG_TIN_DN', 'CD_LAM_TRON', 'CD_QUAN_LY_QUYEN', 'CD_DOI_MAT_KHAU', 'CD_SAO_LUU', 'CD_KHOI_PHUC', 'CD_RESET_DATA'];
       return cdViews.some(v => hasPermission(currentUser, v));
     }
 
@@ -557,7 +557,7 @@ export default function Ribbon({
         {/* TAB 3: CÀI ĐẶT HỆ THỐNG */}
         {activeTab === 'CAI_DAT' && (
           <>
-            {/* Group 1: Doanh nghiệp & Bản quyền */}
+            {/* Group 1: Doanh nghiệp */}
             <div className="flex flex-col border-r border-gray-200 pr-3 justify-between">
               <div className="flex space-x-1">
                 <button
@@ -566,13 +566,6 @@ export default function Ribbon({
                 >
                   <Building className="h-5 w-5 text-slate-700 mb-0.5" />
                   <span className="text-[10px] text-center leading-tight font-medium text-gray-700">Thông tin DN</span>
-                </button>
-                <button
-                  onClick={() => handleViewClick('CD_BAN_QUYEN')}
-                  className={`flex flex-col items-center justify-center p-1.5 rounded w-[85px] transition-all duration-150 ${getBtnClass('CD_BAN_QUYEN')}`}
-                >
-                  <Sparkles className="h-5 w-5 text-amber-500 mb-0.5" />
-                  <span className="text-[10px] text-center leading-tight font-medium text-gray-700">Bản quyền PM</span>
                 </button>
               </div>
               <span className="text-[9px] text-gray-400 text-center mt-auto font-medium tracking-wide">THÔNG TIN DOANH NGHIỆP</span>

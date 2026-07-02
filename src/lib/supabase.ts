@@ -332,6 +332,32 @@ export async function dbFetchStores(): Promise<Store[]> {
 }
 
 /**
+ * Fetch all users from Supabase
+ */
+export async function dbFetchAllUsers(): Promise<AppUser[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb
+      .from('app_users')
+      .select('*');
+    if (error) throw error;
+    return (data || []).map((u: any) => ({
+      id: u.id,
+      storeId: u.store_id,
+      username: u.username,
+      fullName: u.full_name,
+      role: u.role,
+      password: u.password,
+      status: u.status
+    }));
+  } catch (err) {
+    console.warn('Thông tin Supabase (Tải người dùng): Lỗi tải danh sách người dùng.', err);
+    return [];
+  }
+}
+
+/**
  * Save or update store to Supabase
  */
 export async function dbSaveStore(store: Store): Promise<boolean> {
@@ -354,6 +380,40 @@ export async function dbSaveStore(store: Store): Promise<boolean> {
     return true;
   } catch (err) {
     console.warn('Thông tin Supabase (Lưu cửa hàng): Không thể lưu lên đám mây, dữ liệu đã lưu cục bộ.', err);
+    return false;
+  }
+}
+
+/**
+ * Delete store and related data from Supabase
+ */
+export async function dbDeleteStore(storeId: string): Promise<boolean> {
+  const sb = getSupabase();
+  if (!sb) return false;
+  try {
+    // Delete store record itself
+    const { error } = await sb
+      .from('stores')
+      .delete()
+      .eq('id', storeId);
+    if (error) throw error;
+
+    // Try deleting cascading child records on a best-effort basis
+    await sb.from('app_users').delete().eq('store_id', storeId);
+    await sb.from('products').delete().eq('store_id', storeId);
+    await sb.from('warehouses').delete().eq('store_id', storeId);
+    await sb.from('customers').delete().eq('store_id', storeId);
+    await sb.from('suppliers').delete().eq('store_id', storeId);
+    await sb.from('employees').delete().eq('store_id', storeId);
+    await sb.from('funds').delete().eq('store_id', storeId);
+    await sb.from('categories').delete().eq('store_id', storeId);
+    await sb.from('transactions').delete().eq('store_id', storeId);
+    await sb.from('quotations').delete().eq('store_id', storeId);
+    await sb.from('settings').delete().eq('store_id', storeId);
+
+    return true;
+  } catch (err) {
+    console.warn('Thông tin Supabase (Xóa cửa hàng): Lỗi khi xóa trên đám mây.', err);
     return false;
   }
 }

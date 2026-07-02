@@ -5,7 +5,7 @@ import {
   AlertTriangle, Activity, Clock, Building2, UserCheck, RefreshCw, LogOut,
   ExternalLink, Mail, Phone, Sparkles, Filter, CheckCircle2
 } from 'lucide-react';
-import { isSupabaseConfigured, getSupabaseSQLSchema, dbFetchStores, dbSaveStore, dbPushAllStoreData, dbSaveUser, dbTestConnection } from '../lib/supabase';
+import { isSupabaseConfigured, getSupabaseSQLSchema, dbFetchStores, dbSaveStore, dbDeleteStore, dbPushAllStoreData, dbSaveUser, dbTestConnection } from '../lib/supabase';
 
 interface SaaSAdminManagerProps {
   stores: Store[];
@@ -64,6 +64,8 @@ export default function SaaSAdminManager({
   const [extendingStore, setExtendingStore] = useState<Store | null>(null);
   const [extensionMonths, setExtensionMonths] = useState<number>(12);
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
+  const [extensionType, setExtensionType] = useState<'PREDEFINED' | 'CUSTOM'>('PREDEFINED');
+  const [customExtensionDate, setCustomExtensionDate] = useState('');
 
   // Modal State for Managing Store Admins
   const [managingStoreAdmin, setManagingStoreAdmin] = useState<Store | null>(null);
@@ -317,10 +319,19 @@ export default function SaaSAdminManager({
     e.preventDefault();
     if (!extendingStore) return;
 
-    const currentExpiry = new Date(extendingStore.expiryDate);
-    const baseline = currentExpiry < new Date() ? new Date() : currentExpiry; // Extend from now if already expired
-    baseline.setMonth(baseline.getMonth() + extensionMonths);
-    const newExpiry = baseline.toISOString().split('T')[0];
+    let newExpiry = '';
+    if (extensionType === 'CUSTOM') {
+      if (!customExtensionDate) {
+        alert('Vui lòng chọn ngày hết hạn tùy chỉnh hợp lệ!');
+        return;
+      }
+      newExpiry = customExtensionDate;
+    } else {
+      const currentExpiry = new Date(extendingStore.expiryDate);
+      const baseline = currentExpiry < new Date() ? new Date() : currentExpiry; // Extend from now if already expired
+      baseline.setMonth(baseline.getMonth() + extensionMonths);
+      newExpiry = baseline.toISOString().split('T')[0];
+    }
 
     const updated = stores.map(s => {
       if (s.id === extendingStore.id) {
@@ -336,6 +347,58 @@ export default function SaaSAdminManager({
       await dbSaveStore({ ...extendingStore, expiryDate: newExpiry });
     }
 
+    setIsExtendModalOpen(false);
+    setExtendingStore(null);
+  };
+
+  // Delete Store and all related local/cloud data
+  const handleDeleteStore = async (storeId: string) => {
+    if (storeId === 'store_default') {
+      alert('Không thể xóa cửa hàng mặc định!');
+      return;
+    }
+    const storeToDelete = stores.find(s => s.id === storeId);
+    if (!storeToDelete) return;
+
+    if (!window.confirm(`⚠️ CẢNH BÁO CỰC KỲ QUAN TRỌNG:\n\nBạn có chắc chắn muốn xóa vĩnh viễn cửa hàng "${storeToDelete.name}"?\nHành động này sẽ xóa hoàn toàn tất cả người dùng, sản phẩm, kho hàng, khách hàng, nhà cung cấp, nhân viên, quỹ tiền, chứng từ phát sinh và cấu hình của riêng cửa hàng này.\n\nThao tác này KHÔNG THỂ HOÀN TÁC!`)) {
+      return;
+    }
+
+    // 1. Remove from local stores state
+    const updated = stores.filter(s => s.id !== storeId);
+    setStores(updated);
+    localStorage.setItem('excel_erp_stores', JSON.stringify(updated));
+
+    // 2. Clean up local storage data associated with this store id
+    const keysToRemove = [
+      `excel_erp_users_${storeId}`,
+      `excel_erp_products_${storeId}`,
+      `excel_erp_warehouses_${storeId}`,
+      `excel_erp_customers_${storeId}`,
+      `excel_erp_suppliers_${storeId}`,
+      `excel_erp_employees_${storeId}`,
+      `excel_erp_funds_${storeId}`,
+      `excel_erp_categories_${storeId}`,
+      `excel_erp_transactions_${storeId}`,
+      `excel_erp_quotations_${storeId}`,
+      `excel_erp_settings_${storeId}`
+    ];
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+
+    // If the current active store is this one, fallback to store_default
+    const currentStoreId = localStorage.getItem('excel_erp_current_store_id');
+    if (currentStoreId === storeId) {
+      localStorage.setItem('excel_erp_current_store_id', 'store_default');
+    }
+
+    // 3. Delete from Supabase cloud database if configured
+    if (hasCloudDb) {
+      await dbDeleteStore(storeId);
+    }
+
+    alert(`Đã xóa vĩnh viễn cửa hàng "${storeToDelete.name}" và toàn bộ dữ liệu thành công!`);
+    
+    // Close modal if open
     setIsExtendModalOpen(false);
     setExtendingStore(null);
   };
@@ -785,6 +848,9 @@ export default function SaaSAdminManager({
                                 onClick={() => {
                                   setExtendingStore(store);
                                   setIsExtendModalOpen(true);
+                                  setExtensionMonths(12);
+                                  setExtensionType('PREDEFINED');
+                                  setCustomExtensionDate(store.expiryDate);
                                 }}
                                 className="p-1 border border-slate-700 text-slate-400 hover:text-amber-400 hover:border-amber-950 hover:bg-amber-950/20 rounded transition-colors"
                                 title="Gia hạn bản quyền"
@@ -1111,20 +1177,29 @@ export default function SaaSAdminManager({
 
               <div className="border-t border-slate-800 pt-3">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 font-mono">Thời gian Gia hạn thêm</label>
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-3 gap-2 text-xs mb-3">
                   {[
                     { months: 3, label: '+3 Tháng' },
                     { months: 6, label: '+6 Tháng' },
                     { months: 12, label: '+1 Năm' },
                     { months: 24, label: '+2 Năm' },
-                    { months: 36, label: '+3 Năm' }
+                    { months: 36, label: '+3 Năm' },
+                    { months: -1, label: 'Tùy chọn' }
                   ].map(opt => (
                     <button
                       key={opt.months}
                       type="button"
-                      onClick={() => setExtensionMonths(opt.months)}
+                      onClick={() => {
+                        if (opt.months === -1) {
+                          setExtensionType('CUSTOM');
+                          setExtensionMonths(-1);
+                        } else {
+                          setExtensionType('PREDEFINED');
+                          setExtensionMonths(opt.months);
+                        }
+                      }}
                       className={`py-2 text-center rounded border font-semibold cursor-pointer ${
-                        extensionMonths === opt.months
+                        (opt.months === -1 && extensionType === 'CUSTOM') || (extensionType === 'PREDEFINED' && extensionMonths === opt.months)
                           ? 'bg-amber-500/10 border-amber-500 text-amber-400'
                           : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-600'
                       }`}
@@ -1133,25 +1208,52 @@ export default function SaaSAdminManager({
                     </button>
                   ))}
                 </div>
+
+                {extensionType === 'CUSTOM' && (
+                  <div className="mt-3 animate-fadeIn">
+                    <label className="block text-[9px] font-bold text-amber-400 uppercase tracking-wider mb-1 font-mono">Chọn ngày hết hạn mong muốn</label>
+                    <input
+                      type="date"
+                      required
+                      value={customExtensionDate}
+                      onChange={(e) => setCustomExtensionDate(e.target.value)}
+                      className="w-full text-xs p-2.5 bg-slate-900 border border-slate-700 rounded text-slate-100 focus:outline-none focus:border-amber-500 font-bold font-mono"
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="border-t border-slate-800 pt-4 flex space-x-2 justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsExtendModalOpen(false);
-                    setExtendingStore(null);
-                  }}
-                  className="px-4 py-2 border border-slate-700 hover:border-slate-600 rounded text-slate-300 text-xs font-bold cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold shadow cursor-pointer"
-                >
-                  Cập nhật Gia hạn
-                </button>
+              <div className="border-t border-slate-800 pt-4 flex space-x-2 justify-between items-center animate-fadeIn">
+                {extendingStore.id !== 'store_default' ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteStore(extendingStore.id)}
+                    className="px-3 py-2 bg-red-950/40 border border-red-800 hover:bg-red-900/40 text-red-300 rounded text-xs font-bold flex items-center space-x-1 cursor-pointer transition-all"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Xóa Cửa Hàng Vĩnh Viễn</span>
+                  </button>
+                ) : (
+                  <div></div>
+                )}
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExtendModalOpen(false);
+                      setExtendingStore(null);
+                    }}
+                    className="px-4 py-2 border border-slate-700 hover:border-slate-600 rounded text-slate-300 text-xs font-bold cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold shadow cursor-pointer"
+                  >
+                    Cập nhật Gia hạn
+                  </button>
+                </div>
               </div>
             </form>
           </div>
