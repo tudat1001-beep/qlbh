@@ -40,8 +40,8 @@ import {
 import { AppUser } from '../types';
 
 interface RibbonProps {
-  activeTab: 'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT' | 'CHINH_SUA';
-  setActiveTab: (tab: 'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT' | 'CHINH_SUA') => void;
+  activeTab: 'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT';
+  setActiveTab: (tab: 'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT') => void;
   selectedView: string;
   setSelectedView: (view: string) => void;
   decimalPlaces: number;
@@ -166,10 +166,9 @@ export default function Ribbon({
     return false;
   };
 
-  const isTabAllowed = (tab: 'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT' | 'CHINH_SUA') => {
+  const isTabAllowed = (tab: 'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT') => {
     if (!currentUser) return false;
     if (currentUser.role === 'ADMIN') return true;
-    if (tab === 'CHINH_SUA') return true;
     if (tab === 'BAN_HANG') return true;
 
     if (tab === 'DANH_MUC') {
@@ -194,7 +193,7 @@ export default function Ribbon({
     }
   };
 
-  const handleTabClick = (tab: 'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT' | 'CHINH_SUA') => {
+  const handleTabClick = (tab: 'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT') => {
     if (!isTabAllowed(tab)) {
       alert(`⚠️ Quyền hạn của bạn (${currentUser?.fullName} - [${currentUser?.role}]) không cho phép truy cập tab này!`);
       return;
@@ -282,17 +281,6 @@ export default function Ribbon({
             }`}
           >
             CÀI ĐẶT HỆ THỐNG
-          </button>
-          <button
-            id="tab-chinh-sua"
-            onClick={() => handleTabClick('CHINH_SUA')}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-t transition-colors duration-150 -mb-[1px] ${
-              activeTab === 'CHINH_SUA'
-                ? c.activeTabClass
-                : 'border-transparent text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            CHỈNH SỬA & TRANG TRÍ
           </button>
         </div>
 
@@ -638,64 +626,6 @@ export default function Ribbon({
                 </button>
               </div>
               <span className="text-[9px] text-gray-400 text-center mt-auto font-medium tracking-wide">QUẢN TRỊ DỮ LIỆU</span>
-            </div>
-          </>
-        )}
-
-        {/* TAB 4: CHỈNH SỬA & TRANG TRÍ */}
-        {activeTab === 'CHINH_SUA' && (
-          <>
-            <div className="flex items-center space-x-3 text-xs w-full py-1">
-              <div className="bg-gray-50 border border-gray-200 rounded p-2 flex items-center space-x-4">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-400 font-semibold">TÔNG MÀU EXCEL</span>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <div className="h-5 w-5 bg-[#107c41] rounded border cursor-pointer hover:scale-110 transition-transform" title="Classic Excel Green"></div>
-                    <div className="h-5 w-5 bg-blue-700 rounded border cursor-pointer hover:scale-110 transition-transform" title="Navy Enterprise"></div>
-                    <div className="h-5 w-5 bg-purple-700 rounded border cursor-pointer hover:scale-110 transition-transform" title="Amethyst Bold"></div>
-                    <div className="h-5 w-5 bg-rose-600 rounded border cursor-pointer hover:scale-110 transition-transform" title="Ruby Rose"></div>
-                    <div className="h-5 w-5 bg-slate-800 rounded border cursor-pointer hover:scale-110 transition-transform" title="Slate Minimal"></div>
-                  </div>
-                </div>
-                
-                <div className="h-8 w-px bg-gray-200"></div>
-
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-400 font-semibold">CỠ CHỮ BÁO CÁO (FONT)</span>
-                  <div className="flex items-center space-x-1 mt-1">
-                    <button className="px-2 py-0.5 bg-white border border-gray-300 rounded text-[11px] font-bold">12px</button>
-                    <button className="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded text-[11px]">14px</button>
-                    <button className="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded text-[11px]">16px</button>
-                  </div>
-                </div>
-
-                <div className="h-8 w-px bg-gray-200"></div>
-
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-400 font-semibold">ĐỊNH DẠNG SỐ</span>
-                  <div className="flex items-center space-x-1 mt-1">
-                    <button className="px-2 py-0.5 bg-white border border-gray-300 rounded text-[11px] font-mono">123,456 đ</button>
-                    <button className="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded text-[11px] font-mono">$123,456</button>
-                  </div>
-                </div>
-
-                <div className="h-8 w-px bg-gray-200"></div>
-
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-400 font-semibold">CĂN LỀ & SHAPES</span>
-                  <div className="flex items-center space-x-1 mt-1">
-                    <button className="p-1 bg-gray-100 border border-gray-300 rounded" title="Căn trái"><AlignLeft className="h-3 w-3" /></button>
-                    <button className="p-1 bg-white border border-gray-300 rounded" title="Căn giữa"><AlignCenter className="h-3 w-3" /></button>
-                    <button className="p-1 bg-gray-100 border border-gray-300 rounded" title="Căn phải"><AlignRight className="h-3 w-3" /></button>
-                    <button className="p-1 bg-gray-100 border border-gray-300 rounded flex items-center space-x-1 text-[10px]" title="Chèn ghi chú"><Scissors className="h-3 w-3" /> <span>Chèn Shape</span></button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-gray-500 text-[11px] max-w-xs leading-tight">
-                <span className="font-semibold text-gray-700 block">💡 Chế độ chỉnh sửa Excel:</span>
-                Các công cụ trên giúp cấu hình hiển thị phông chữ, cỡ chữ, căn lề và định dạng số cho bảng biểu báo cáo.
-              </div>
             </div>
           </>
         )}

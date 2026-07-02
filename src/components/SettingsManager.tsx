@@ -146,7 +146,7 @@ export default function SettingsManager({
     }
 
     if (editingUserId) {
-      const updated = users.map(u => u.id === editingUserId ? { ...u, ...userForm } : u);
+      const updated = users.map(u => u.id === editingUserId ? { ...u, ...userForm, storeId: u.storeId || currentUser?.storeId || 'store_default' } : u);
       onUpdateUsers(updated);
       alert('Đã cập nhật thông tin nhân viên thành công!');
       setEditingUserId(null);
@@ -161,7 +161,8 @@ export default function SettingsManager({
         fullName: userForm.fullName.trim(),
         role: userForm.role,
         password: userForm.password,
-        status: userForm.status
+        status: userForm.status,
+        storeId: currentUser?.storeId || 'store_default'
       };
       onUpdateUsers([...users, newUser]);
       alert('Đã thêm tài khoản nhân viên mới thành công!');

@@ -39,7 +39,7 @@ import ReportsManager from './components/ReportsManager';
 import QuotationManager from './components/QuotationManager';
 import SettingsManager from './components/SettingsManager';
 import SaaSAdminManager from './components/SaaSAdminManager';
-import { isSupabaseConfigured, getSupabase, dbFetchStores, dbFetchAllUsers } from './lib/supabase';
+import { isSupabaseConfigured, getSupabase, dbFetchStores, dbFetchAllUsers, dbSaveUser, dbDeleteUser } from './lib/supabase';
 
 const DEFAULT_PERMISSION_MATRIX = {
   ACCOUNTANT: {
@@ -193,7 +193,7 @@ export default function App() {
   });
 
   // Navigation states
-  const [activeTab, setActiveTab] = useState<'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT' | 'CHINH_SUA'>('BAN_HANG');
+  const [activeTab, setActiveTab] = useState<'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT'>('BAN_HANG');
   const [selectedView, setSelectedView] = useState<string>('DASHBOARD');
 
   // Excel customization formatting states (CHỈNH SỬA tab)
@@ -384,7 +384,38 @@ export default function App() {
   const handleEditSupplier = (item: Supplier) => setSuppliers(suppliers.map(s => s.id === item.id ? item : s));
   const handleDeleteSupplier = (id: string) => setSuppliers(suppliers.filter(s => s.id !== id));
 
-  const handleAddEmployee = (item: Employee) => {
+  const handleUpdateUsers = async (updatedUsers: AppUser[] | ((prev: AppUser[]) => AppUser[])) => {
+    let nextUsers: AppUser[];
+    if (typeof updatedUsers === 'function') {
+      nextUsers = updatedUsers(users);
+    } else {
+      nextUsers = updatedUsers;
+    }
+
+    setUsers(nextUsers);
+
+    if (isSupabaseConfigured()) {
+      try {
+        // Sync additions & updates
+        for (const u of nextUsers) {
+          const userWithStore = {
+            ...u,
+            storeId: u.storeId || currentStoreId
+          };
+          await dbSaveUser(userWithStore);
+        }
+        // Sync deletions
+        const deleted = users.filter(u => !nextUsers.some(nu => nu.id === u.id));
+        for (const u of deleted) {
+          await dbDeleteUser(u.id);
+        }
+      } catch (err) {
+        console.warn('Lỗi đồng bộ tài khoản lên Supabase:', err);
+      }
+    }
+  };
+
+  const handleAddEmployee = async (item: Employee) => {
     setEmployees([...employees, item]);
     if (item.username) {
       const newUser: AppUser = {
@@ -397,14 +428,14 @@ export default function App() {
         storeId: currentStoreId
       };
       if (!users.some(u => u.username.toLowerCase() === item.username?.toLowerCase())) {
-        setUsers(prev => [...prev, newUser]);
+        await handleUpdateUsers(prev => [...prev, newUser]);
       }
     }
   };
-  const handleEditEmployee = (item: Employee) => {
+  const handleEditEmployee = async (item: Employee) => {
     setEmployees(employees.map(e => e.id === item.id ? item : e));
     if (item.username) {
-      setUsers(prev => {
+      await handleUpdateUsers(prev => {
         const idx = prev.findIndex(u => u.id === item.id || u.username.toLowerCase() === item.username?.toLowerCase());
         if (idx > -1) {
           const updated = [...prev];
@@ -430,9 +461,9 @@ export default function App() {
       });
     }
   };
-  const handleDeleteEmployee = (id: string) => {
+  const handleDeleteEmployee = async (id: string) => {
     setEmployees(employees.filter(e => e.id !== id));
-    setUsers(prev => prev.filter(u => u.id !== id));
+    await handleUpdateUsers(prev => prev.filter(u => u.id !== id));
   };
 
   const handleAddFund = (item: FundAccount) => setFunds([...funds, item]);
@@ -607,7 +638,7 @@ export default function App() {
   const metrics = getDashboardMetrics();
 
   // Helper to trigger view redirection when tab is changed
-  const handleSetTab = (tab: 'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT' | 'CHINH_SUA') => {
+  const handleSetTab = (tab: 'BAN_HANG' | 'DANH_MUC' | 'CAI_DAT') => {
     setActiveTab(tab);
     if (tab === 'BAN_HANG') {
       setSelectedView('DASHBOARD');
@@ -620,8 +651,6 @@ export default function App() {
       } else {
         setSelectedView('CD_DOI_MAT_KHAU');
       }
-    } else if (tab === 'CHINH_SUA') {
-      setSelectedView('CHINH_SUA_WIDGET');
     }
   };
 
@@ -1129,100 +1158,6 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 4: CHỈNH SỬA & TRANG TRÍ (SHAPES, FONT, ALIGNMENT, NUMBER, INSERTTEXT TOOL VIEW) */}
-        {selectedView === 'CHINH_SUA_WIDGET' && (
-          <div className="p-6 overflow-auto flex-1 bg-white max-w-2xl mx-auto border border-gray-200 rounded shadow-sm my-6">
-            <h2 className="text-sm font-bold text-gray-800 uppercase border-b border-gray-200 pb-2 mb-4">
-              CÔNG CỤ THIẾT KẾ & TRANG TRÍ BÁO CÁO (EXCEL FORMAT)
-            </h2>
-            <div className="space-y-6 text-xs">
-              <div className="space-y-2">
-                <span className="font-bold text-gray-600 block">1. LÀM ĐẸP CHỦ ĐỀ SỔ SÁCH (THEME COLOR):</span>
-                <p className="text-gray-400 text-[11px]">Đổi màu biểu tượng và thanh tiêu đề Ribbon theo nhận diện thương hiệu:</p>
-                <div className="flex space-x-3 pt-1">
-                  <button onClick={() => setExcelTheme('GREEN')} className={`px-3 py-1.5 rounded font-bold text-xs border ${excelTheme === 'GREEN' ? 'bg-[#107c41] text-white border-[#107c41]' : 'bg-gray-100 text-gray-700'}`}>
-                    Classic Excel Green
-                  </button>
-                  <button onClick={() => setExcelTheme('BLUE')} className={`px-3 py-1.5 rounded font-bold text-xs border ${excelTheme === 'BLUE' ? 'bg-blue-700 text-white border-blue-700' : 'bg-gray-100 text-gray-700'}`}>
-                    Navy Enterprise Blue
-                  </button>
-                  <button onClick={() => setExcelTheme('PURPLE')} className={`px-3 py-1.5 rounded font-bold text-xs border ${excelTheme === 'PURPLE' ? 'bg-purple-700 text-white border-purple-700' : 'bg-gray-100 text-gray-700'}`}>
-                    Royal Purple Accent
-                  </button>
-                  <button onClick={() => setExcelTheme('SLATE')} className={`px-3 py-1.5 rounded font-bold text-xs border ${excelTheme === 'SLATE' ? 'bg-slate-800 text-white border-slate-800' : 'bg-gray-100 text-gray-700'}`}>
-                    Corporate Slate Gray
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <span className="font-bold text-gray-600 block">2. CỠ CHỮ BÁO CÁO (FONT SIZE):</span>
-                <div className="flex space-x-3 pt-1">
-                  {[12, 14, 16].map(sz => (
-                    <button
-                      key={sz}
-                      onClick={() => setFontSize(sz as any)}
-                      className={`px-3 py-1 border rounded text-xs font-mono transition-colors ${fontSize === sz ? `${currentAppTheme.bg} text-white font-bold` : 'bg-white text-gray-700'}`}
-                    >
-                      {sz}px
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <span className="font-bold text-gray-600 block">3. TIÊU ĐỀ SẮC NÉT (HEADER STYLE):</span>
-                <label className="flex items-center space-x-2 cursor-pointer font-bold select-none pt-1">
-                  <input
-                    type="checkbox"
-                    checked={boldHeaders}
-                    onChange={(e) => setBoldHeaders(e.target.checked)}
-                    className={`h-4 w-4 ${currentAppTheme.text} ${currentAppTheme.focusRing}`}
-                  />
-                  <span>Tự động viết đậm các thanh tiêu đề (Bold Column Headers)</span>
-                </label>
-              </div>
-
-              <div className="space-y-2 border-t border-gray-100 pt-4">
-                <span className="font-bold text-gray-600 block">4. CHÈN SHAPE NỐT GHI CHÚ (INSERT TEXT SHAPES):</span>
-                <p className="text-gray-400 text-[11px] leading-relaxed">
-                  Thiết kế một Sticky Shape màu vàng nổi bên góc phải màn hình để nhắc nhở công việc, ghi nhớ hạn nợ hoặc chỉ tiêu doanh số trực tiếp trong kỳ.
-                </p>
-                
-                <form onSubmit={handleAddStickyNote} className="flex gap-2 pt-2">
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Nhắc nhở KH001 hẹn thanh toán 15.500.000đ ngày mai..."
-                    value={newStickyNote}
-                    onChange={(e) => setNewStickyNote(e.target.value)}
-                    className={`flex-1 text-xs p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 ${currentAppTheme.focusRing}`}
-                  />
-                  <button
-                    type="submit"
-                    className={`${currentAppTheme.bg} ${currentAppTheme.hover} text-white px-4 py-2 rounded font-bold transition`}
-                  >
-                    Chèn Ghi Chú
-                  </button>
-                </form>
-
-                {stickyNotes.length > 0 && (
-                  <div className="space-y-1 pt-2">
-                    <span className="text-[10px] font-bold text-gray-400 block uppercase">Danh sách nốt ghi chú đã chèn:</span>
-                    <div className="space-y-1">
-                      {stickyNotes.map((nt, i) => (
-                        <div key={i} className="flex justify-between items-center bg-yellow-50 p-2 rounded border border-yellow-200">
-                          <span className="truncate max-w-md font-medium text-yellow-900">{nt}</span>
-                          <button onClick={() => handleDeleteStickyNote(i)} className="text-red-500 font-bold hover:underline">Xoá</button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* 1. MASTER DATA VIEW */}
         {selectedView.startsWith('DM_') && (
           <CategoryManager
@@ -1324,7 +1259,7 @@ export default function App() {
             exportDatabase={exportDatabase}
             excelTheme={excelTheme}
             users={users}
-            onUpdateUsers={setUsers}
+            onUpdateUsers={handleUpdateUsers}
             permissionMatrix={permissionMatrix}
             onUpdatePermissionMatrix={setPermissionMatrix}
             currentUser={currentUser}

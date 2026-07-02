@@ -446,6 +446,25 @@ export async function dbSaveUser(user: AppUser): Promise<boolean> {
 }
 
 /**
+ * Delete single user from Supabase
+ */
+export async function dbDeleteUser(userId: string): Promise<boolean> {
+  const sb = getSupabase();
+  if (!sb) return false;
+  try {
+    const { error } = await sb
+      .from('app_users')
+      .delete()
+      .eq('id', userId);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.warn('Thông tin Supabase (Xóa người dùng): Không thể xóa trên đám mây, vui lòng kiểm tra kết nối.', err);
+    return false;
+  }
+}
+
+/**
  * Synchronize entire dataset of a store to/from Supabase (Push backup)
  */
 export async function dbPushAllStoreData(
