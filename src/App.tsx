@@ -867,6 +867,9 @@ export default function App() {
     );
   }
 
+  const activeStore = stores.find(s => s.id === currentStoreId);
+  const activeStoreExpiry = activeStore ? activeStore.expiryDate : undefined;
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans select-none text-slate-800" id="sales-management-app">
       {/* Super Admin Back to SaaS bar */}
@@ -898,6 +901,7 @@ export default function App() {
         currentUser={currentUser}
         onLogout={() => setCurrentUser(null)}
         permissionMatrix={permissionMatrix}
+        expiryDate={activeStoreExpiry}
       />
 
       {/* Main Workspace Layout */}
@@ -945,6 +949,12 @@ export default function App() {
                 <span className={`${themeBadgeColors[excelTheme]} border text-[10px] px-3 py-1 rounded-full font-mono font-bold transition-all duration-200`}>
                   Kế toán trưởng: {settings.enterprise.chiefAccountant}
                 </span>
+                {activeStoreExpiry && (
+                  <span className="bg-amber-400 text-slate-900 border border-amber-300 text-[10px] px-3 py-1 rounded-full font-bold flex items-center space-x-1 shadow-sm">
+                    <span className="h-1.5 w-1.5 bg-slate-900 rounded-full inline-block animate-pulse"></span>
+                    <span>Bản quyền ERP đến: {activeStoreExpiry}</span>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -1280,22 +1290,6 @@ export default function App() {
             onUpdateCurrentUser={setCurrentUser}
           />
         )}
-      </div>
-
-      {/* Corporate Status/Footer Bar */}
-      <div id="footer-status-bar" className={`${footerBgs[excelTheme]} text-white px-4 py-1.5 flex justify-between items-center text-[11px] select-none font-mono transition-colors duration-200`}>
-        <div>
-          Trạng thái:{' '}
-          <span className={`font-sans font-bold ${footerBadges[excelTheme]} px-2 py-0.5 rounded text-white transition-colors duration-200`}>
-            Sẵn Sàng Làm Việc
-          </span>
-        </div>
-        <div>
-          Excel Custom UI v2026.1 • Phát triển chuẩn CSS Grid / Flexbox
-        </div>
-        <div className="flex items-center space-x-2">
-          <span>Kế toán:{' '}<strong>{settings.enterprise.chiefAccountant}</strong></span>
-        </div>
       </div>
     </div>
   );

@@ -50,6 +50,7 @@ interface RibbonProps {
   currentUser: AppUser | null;
   onLogout: () => void;
   permissionMatrix?: any;
+  expiryDate?: string;
 }
 
 export default function Ribbon({
@@ -62,7 +63,8 @@ export default function Ribbon({
   excelTheme = 'GREEN',
   currentUser,
   onLogout,
-  permissionMatrix
+  permissionMatrix,
+  expiryDate
 }: RibbonProps) {
   const themeColors = {
     GREEN: {
@@ -208,6 +210,13 @@ export default function Ribbon({
         </div>
         <div className="flex items-center space-x-4 text-[11px] text-slate-100">
           <div>Làm tròn: <strong className="text-white bg-black/20 px-2 py-0.5 rounded">{decimalPlaces} TP</strong></div>
+          
+          {expiryDate && (
+            <div className="bg-amber-500/20 border border-amber-400/30 px-2 py-0.5 rounded text-amber-200 text-[10px] font-bold flex items-center space-x-1">
+              <span className="h-1.5 w-1.5 bg-amber-400 rounded-full inline-block"></span>
+              <span>Bản quyền đến: <strong className="text-white">{expiryDate}</strong></span>
+            </div>
+          )}
           
           {currentUser && (
             <div className="bg-black/20 border border-white/10 px-2.5 py-0.5 rounded flex items-center space-x-2 text-white font-sans">
