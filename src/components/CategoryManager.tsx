@@ -347,7 +347,7 @@ export default function CategoryManager({
           </h2>
           <p className="text-[11px] text-gray-500 mt-0.5">Quản lý và cập nhật cơ sở dữ liệu danh mục để phục vụ hạch toán, báo cáo.</p>
         </div>
-        {!(view === 'DM_NHAN_VIEN' && currentUser?.role !== 'ADMIN') && (
+        {!(view === 'DM_NHAN_VIEN' && currentUser?.role !== 'ADMIN' && currentUser?.role !== 'ACCOUNTANT') && (
           <button
             onClick={openAddModal}
             className={`${theme.accent} text-xs font-semibold px-3 py-1.5 rounded shadow-sm flex items-center space-x-1 transition-all`}
@@ -543,7 +543,7 @@ export default function CategoryManager({
                       </td>
                     )}
                     <td className="px-3 py-2 text-center flex items-center justify-center space-x-1.5">
-                      {!(view === 'DM_NHAN_VIEN' && currentUser?.role !== 'ADMIN') ? (
+                      {!(view === 'DM_NHAN_VIEN' && currentUser?.role !== 'ADMIN' && currentUser?.role !== 'ACCOUNTANT') ? (
                         <>
                           <button
                             onClick={() => openEditModal(item)}
@@ -591,7 +591,9 @@ export default function CategoryManager({
               <div className="grid grid-cols-2 gap-4">
                 {/* Code Field (standard) */}
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-500 mb-1">MÃ HỆ THỐNG (KHÔNG TRÙNG)</label>
+                  <label className="block text-[10px] font-bold text-gray-500 mb-1">
+                    {view === 'DM_NHAN_VIEN' ? 'MÃ NHÂN VIÊN' : 'MÃ HỆ THỐNG (KHÔNG TRÙNG)'}
+                  </label>
                   <input
                     type="text"
                     required
@@ -602,7 +604,9 @@ export default function CategoryManager({
                 </div>
                 {/* Name Field */}
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-500 mb-1">TÊN / TIÊU ĐỀ CHI TIẾT</label>
+                  <label className="block text-[10px] font-bold text-gray-500 mb-1">
+                    {view === 'DM_NHAN_VIEN' ? 'HỌ VÀ TÊN NHÂN VIÊN' : 'TÊN / TIÊU ĐỀ CHI TIẾT'}
+                  </label>
                   <input
                     type="text"
                     required

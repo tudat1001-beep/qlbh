@@ -943,12 +943,6 @@ export default function App() {
                 <span>📞 {settings.enterprise.phone}</span>
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <span className="bg-white/10 text-white border border-white/20 text-[10px] px-3 py-1 rounded-full font-mono font-bold">
-                  Kỳ hoạt động: {settings.workingPeriod}
-                </span>
-                <span className={`${themeBadgeColors[excelTheme]} border text-[10px] px-3 py-1 rounded-full font-mono font-bold transition-all duration-200`}>
-                  Kế toán trưởng: {settings.enterprise.chiefAccountant}
-                </span>
                 {activeStoreExpiry && (
                   <span className="bg-amber-400 text-slate-900 border border-amber-300 text-[10px] px-3 py-1 rounded-full font-bold flex items-center space-x-1 shadow-sm">
                     <span className="h-1.5 w-1.5 bg-slate-900 rounded-full inline-block animate-pulse"></span>

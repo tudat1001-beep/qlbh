@@ -148,7 +148,10 @@ export default function Ribbon({
     if (['CD_THONG_TIN_DN', 'CD_KỲ_MOI', 'CD_LAM_TRON'].includes(target)) {
       return !!matrix.enterprise_setup;
     }
-    if (['CD_QUAN_LY_QUYEN', 'CD_DOI_MAT_KHAU', 'CD_SAO_LUU', 'CD_KHOI_PHUC', 'CD_RESET_DATA', 'DM_NHAN_VIEN'].includes(target)) {
+    if (target === 'DM_NHAN_VIEN') {
+      return !!(matrix.sales || matrix.purchases || matrix.financial_reports || matrix.system_setup);
+    }
+    if (['CD_QUAN_LY_QUYEN', 'CD_DOI_MAT_KHAU', 'CD_SAO_LUU', 'CD_KHOI_PHUC', 'CD_RESET_DATA'].includes(target)) {
       return !!matrix.system_setup;
     }
 
