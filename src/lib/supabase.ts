@@ -98,7 +98,9 @@ CREATE TABLE IF NOT EXISTS public.stores (
 
 -- Bật Row Level Security (RLS) hoặc tắt tùy chọn bảo mật để dễ dàng thử nghiệm ban đầu
 ALTER TABLE public.stores ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public read access to stores" ON public.stores;
 CREATE POLICY "Allow public read access to stores" ON public.stores FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert/update to stores" ON public.stores;
 CREATE POLICY "Allow public insert/update to stores" ON public.stores FOR ALL USING (true);
 
 -- 2. Bảng Users (Nhân viên / Tài khoản)
@@ -115,6 +117,7 @@ CREATE TABLE IF NOT EXISTS public.app_users (
 );
 
 ALTER TABLE public.app_users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all actions on app_users" ON public.app_users;
 CREATE POLICY "Allow all actions on app_users" ON public.app_users FOR ALL USING (true);
 
 -- 3. Bảng Sản phẩm (Products)
@@ -133,6 +136,7 @@ CREATE TABLE IF NOT EXISTS public.products (
 );
 
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on products" ON public.products;
 CREATE POLICY "Allow all on products" ON public.products FOR ALL USING (true);
 
 -- 4. Bảng Kho hàng (Warehouses)
@@ -146,6 +150,7 @@ CREATE TABLE IF NOT EXISTS public.warehouses (
 );
 
 ALTER TABLE public.warehouses ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on warehouses" ON public.warehouses;
 CREATE POLICY "Allow all on warehouses" ON public.warehouses FOR ALL USING (true);
 
 -- 5. Bảng Khách hàng (Customers)
@@ -161,6 +166,7 @@ CREATE TABLE IF NOT EXISTS public.customers (
 );
 
 ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on customers" ON public.customers;
 CREATE POLICY "Allow all on customers" ON public.customers FOR ALL USING (true);
 
 -- 6. Bảng Nhà cung cấp (Suppliers)
@@ -176,6 +182,7 @@ CREATE TABLE IF NOT EXISTS public.suppliers (
 );
 
 ALTER TABLE public.suppliers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on suppliers" ON public.suppliers;
 CREATE POLICY "Allow all on suppliers" ON public.suppliers FOR ALL USING (true);
 
 -- 7. Bảng Nhân viên trong cửa hàng (Employees)
@@ -190,6 +197,7 @@ CREATE TABLE IF NOT EXISTS public.employees (
 );
 
 ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on employees" ON public.employees;
 CREATE POLICY "Allow all on employees" ON public.employees FOR ALL USING (true);
 
 -- 8. Bảng Tài khoản / Quỹ tiền (Funds)
@@ -204,6 +212,7 @@ CREATE TABLE IF NOT EXISTS public.funds (
 );
 
 ALTER TABLE public.funds ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on funds" ON public.funds;
 CREATE POLICY "Allow all on funds" ON public.funds FOR ALL USING (true);
 
 -- 9. Bảng Danh mục thu chi (Categories)
@@ -217,6 +226,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
 );
 
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on categories" ON public.categories;
 CREATE POLICY "Allow all on categories" ON public.categories FOR ALL USING (true);
 
 -- 10. Bảng Chứng từ / Phát sinh giao dịch (Transactions)
@@ -241,6 +251,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 );
 
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on transactions" ON public.transactions;
 CREATE POLICY "Allow all on transactions" ON public.transactions FOR ALL USING (true);
 
 -- 11. Bảng Báo giá (Quotations)
@@ -260,6 +271,7 @@ CREATE TABLE IF NOT EXISTS public.quotations (
 );
 
 ALTER TABLE public.quotations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on quotations" ON public.quotations;
 CREATE POLICY "Allow all on quotations" ON public.quotations FOR ALL USING (true);
 
 -- 12. Bảng Cấu hình hệ thống (Settings)
@@ -272,6 +284,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
 );
 
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on settings" ON public.settings;
 CREATE POLICY "Allow all on settings" ON public.settings FOR ALL USING (true);
 
 -- CHÈN DỮ LIỆU CỬA HÀNG MẪU ĐẦU TIÊN
