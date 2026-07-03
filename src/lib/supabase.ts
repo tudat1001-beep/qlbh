@@ -481,6 +481,7 @@ export async function dbPushAllStoreData(
     quotations: Quotation[];
     settings: SystemSettings;
     users: AppUser[];
+    permissionMatrix?: any;
   }
 ): Promise<{ success: boolean; message: string }> {
   const sb = getSupabase();
@@ -640,7 +641,10 @@ export async function dbPushAllStoreData(
     // 11. Save settings
     const dbSettings = {
       store_id: storeId,
-      enterprise: JSON.stringify(data.settings.enterprise),
+      enterprise: JSON.stringify({
+        ...data.settings.enterprise,
+        permissionMatrix: data.permissionMatrix // Embed permission matrix inside enterprise JSONB
+      }),
       decimal_places: data.settings.decimalPlaces,
       working_period: data.settings.workingPeriod,
       backup_frequency: data.settings.backupFrequency
@@ -651,5 +655,152 @@ export async function dbPushAllStoreData(
   } catch (err: any) {
     console.warn('Thông tin Supabase (Đồng bộ thất bại):', err);
     return { success: false, message: `Lỗi đồng bộ: ${err.message || err}` };
+  }
+}
+
+/**
+ * Pull all data for a specific store from Supabase
+ */
+export async function dbPullAllStoreData(storeId: string): Promise<any> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  try {
+    const [
+      { data: products },
+      { data: warehouses },
+      { data: customers },
+      { data: suppliers },
+      { data: employees },
+      { data: funds },
+      { data: categories },
+      { data: transactions },
+      { data: quotations },
+      { data: settings }
+    ] = await Promise.all([
+      sb.from('products').select('*').eq('store_id', storeId),
+      sb.from('warehouses').select('*').eq('store_id', storeId),
+      sb.from('customers').select('*').eq('store_id', storeId),
+      sb.from('suppliers').select('*').eq('store_id', storeId),
+      sb.from('employees').select('*').eq('store_id', storeId),
+      sb.from('funds').select('*').eq('store_id', storeId),
+      sb.from('categories').select('*').eq('store_id', storeId),
+      sb.from('transactions').select('*').eq('store_id', storeId),
+      sb.from('quotations').select('*').eq('store_id', storeId),
+      sb.from('settings').select('*').eq('store_id', storeId).maybeSingle()
+    ]);
+
+    // Parse permissionMatrix from settings.enterprise if it exists
+    let permissionMatrix = null;
+    let cleanSettings = null;
+    if (settings) {
+      let enterpriseObj = {};
+      try {
+        enterpriseObj = typeof settings.enterprise === 'string' ? JSON.parse(settings.enterprise) : (settings.enterprise || {});
+      } catch (e) {
+        enterpriseObj = settings.enterprise || {};
+      }
+      
+      if (enterpriseObj && (enterpriseObj as any).permissionMatrix) {
+        permissionMatrix = (enterpriseObj as any).permissionMatrix;
+        delete (enterpriseObj as any).permissionMatrix; // clean it up
+      }
+
+      cleanSettings = {
+        enterprise: enterpriseObj,
+        decimalPlaces: settings.decimal_places,
+        workingPeriod: settings.working_period,
+        backupFrequency: settings.backup_frequency
+      };
+    }
+
+    return {
+      products: (products || []).map(p => ({
+        id: p.id,
+        code: p.code,
+        name: p.name,
+        unit: p.unit,
+        purchasePrice: Number(p.purchase_price || 0),
+        salePrice: Number(p.sale_price || 0),
+        defaultWarehouseId: p.default_warehouse_id,
+        initialStock: Number(p.initial_stock || 0),
+        category: p.category
+      })),
+      warehouses: (warehouses || []).map(w => ({
+        id: w.id,
+        code: w.code,
+        name: w.name,
+        address: w.address
+      })),
+      customers: (customers || []).map(c => ({
+        id: c.id,
+        code: c.code,
+        name: c.name,
+        phone: c.phone,
+        address: c.address,
+        initialDebt: Number(c.initial_debt || 0)
+      })),
+      suppliers: (suppliers || []).map(s => ({
+        id: s.id,
+        code: s.code,
+        name: s.name,
+        phone: s.phone,
+        address: s.address,
+        initialDebt: Number(s.initial_debt || 0)
+      })),
+      employees: (employees || []).map(e => ({
+        id: e.id,
+        code: e.code,
+        name: e.name,
+        position: e.position,
+        department: e.department
+      })),
+      funds: (funds || []).map(f => ({
+        id: f.id,
+        code: f.code,
+        name: f.name,
+        initialBalance: Number(f.initial_balance || 0),
+        type: f.type
+      })),
+      categories: (categories || []).map(c => ({
+        id: c.id,
+        code: c.code,
+        name: c.name,
+        type: c.type
+      })),
+      transactions: (transactions || []).map(t => ({
+        id: t.id,
+        code: t.code,
+        type: t.type,
+        date: t.date,
+        warehouseId: t.warehouse_id,
+        toWarehouseId: t.to_warehouse_id,
+        partnerId: t.partner_id,
+        partnerType: t.partner_type,
+        fundAccountId: t.fund_account_id,
+        toFundAccountId: t.to_fund_account_id,
+        categoryId: t.category_id,
+        details: typeof t.details === 'string' ? JSON.parse(t.details) : (t.details || []),
+        totalAmount: Number(t.total_amount || 0),
+        note: t.note,
+        creator: t.creator
+      })),
+      quotations: (quotations || []).map(q => ({
+        id: q.id,
+        code: q.code,
+        date: q.date,
+        customerId: q.customer_id,
+        title: q.title,
+        details: typeof q.details === 'string' ? JSON.parse(q.details) : (q.details || []),
+        totalAmount: Number(q.total_amount || 0),
+        note: q.note,
+        validUntil: q.valid_until,
+        status: q.status
+      })),
+      settings: cleanSettings,
+      permissionMatrix
+    };
+  } catch (err) {
+    console.warn('Lỗi khi tải dữ liệu từ Supabase:', err);
+    return null;
   }
 }

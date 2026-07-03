@@ -5,7 +5,7 @@ import {
   AlertTriangle, Activity, Clock, Building2, UserCheck, RefreshCw, LogOut,
   ExternalLink, Mail, Phone, Sparkles, Filter, CheckCircle2
 } from 'lucide-react';
-import { isSupabaseConfigured, getSupabaseSQLSchema, dbFetchStores, dbSaveStore, dbDeleteStore, dbPushAllStoreData, dbSaveUser, dbTestConnection } from '../lib/supabase';
+import { isSupabaseConfigured, getSupabaseSQLSchema, dbFetchStores, dbSaveStore, dbDeleteStore, dbPushAllStoreData, dbPullAllStoreData, dbSaveUser, dbTestConnection } from '../lib/supabase';
 
 interface SaaSAdminManagerProps {
   stores: Store[];
@@ -420,6 +420,52 @@ export default function SaaSAdminManager({
         loading: false,
         success: false,
         message: err.message || 'Lỗi không xác định khi đồng bộ.'
+      });
+    }
+  };
+
+  // Pull database state from Supabase Cloud for Selected Store
+  const handlePullFromCloud = async (storeId: string) => {
+    if (!window.confirm('CẢNH BÁO: Thao tác này sẽ tải toàn bộ dữ liệu từ Supabase Cloud về và ghi đè (overwrite) hoàn toàn dữ liệu cục bộ của cửa hàng này. Bạn có chắc chắn muốn tiếp tục?')) {
+      return;
+    }
+    setSyncStatus({ loading: true });
+    try {
+      const data = await dbPullAllStoreData(storeId);
+      if (!data) {
+        throw new Error('Không thể lấy dữ liệu từ đám mây hoặc dữ liệu trống.');
+      }
+      
+      // Save to localStorage partitions
+      localStorage.setItem(`excel_erp_products_${storeId}`, JSON.stringify(data.products || []));
+      localStorage.setItem(`excel_erp_warehouses_${storeId}`, JSON.stringify(data.warehouses || []));
+      localStorage.setItem(`excel_erp_customers_${storeId}`, JSON.stringify(data.customers || []));
+      localStorage.setItem(`excel_erp_suppliers_${storeId}`, JSON.stringify(data.suppliers || []));
+      localStorage.setItem(`excel_erp_employees_${storeId}`, JSON.stringify(data.employees || []));
+      localStorage.setItem(`excel_erp_funds_${storeId}`, JSON.stringify(data.funds || []));
+      localStorage.setItem(`excel_erp_categories_${storeId}`, JSON.stringify(data.categories || []));
+      localStorage.setItem(`excel_erp_transactions_${storeId}`, JSON.stringify(data.transactions || []));
+      localStorage.setItem(`excel_erp_quotations_${storeId}`, JSON.stringify(data.quotations || []));
+      
+      if (data.settings) {
+        localStorage.setItem(`excel_erp_settings_${storeId}`, JSON.stringify(data.settings));
+      }
+      
+      if (data.permissionMatrix) {
+        localStorage.setItem(`excel_erp_permission_matrix_${storeId}`, JSON.stringify(data.permissionMatrix));
+      }
+      
+      setSyncStatus({
+        loading: false,
+        success: true,
+        message: 'Đã tải và khôi phục dữ liệu từ Supabase Cloud về máy cục bộ thành công! Hãy truy cập lại ERP để xem thay đổi.'
+      });
+      setTimeout(() => setSyncStatus({ loading: false }), 4000);
+    } catch (err: any) {
+      setSyncStatus({
+        loading: false,
+        success: false,
+        message: err.message || 'Lỗi không xác định khi tải dữ liệu.'
       });
     }
   };
@@ -870,7 +916,15 @@ export default function SaaSAdminManager({
                             
                             {/* Cloud Sync backup button (Only available when connected) */}
                             {hasCloudDb && (
-                              <div className="flex justify-end">
+                              <div className="flex justify-end space-x-1.5">
+                                <button
+                                  onClick={() => handlePullFromCloud(store.id)}
+                                  className="text-[9px] text-amber-400 hover:text-white bg-slate-900 border border-slate-800 px-2 py-0.5 rounded flex items-center space-x-1 cursor-pointer font-mono"
+                                  title="Tải xuống và khôi phục dữ liệu từ đám mây cho cửa hàng này"
+                                >
+                                  <RefreshCw className="h-2.5 w-2.5 text-amber-400" />
+                                  <span>Pull from Cloud</span>
+                                </button>
                                 <button
                                   onClick={() => handleSyncToCloud(store.id)}
                                   className="text-[9px] text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-2 py-0.5 rounded flex items-center space-x-1 cursor-pointer font-mono"

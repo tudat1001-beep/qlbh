@@ -188,7 +188,7 @@ export default function App() {
   });
 
   const [permissionMatrix, setPermissionMatrix] = useState(() => {
-    const saved = localStorage.getItem('excel_erp_permission_matrix');
+    const saved = localStorage.getItem(`excel_erp_permission_matrix_${currentStoreId}`);
     return saved ? JSON.parse(saved) : DEFAULT_PERMISSION_MATRIX;
   });
 
@@ -217,6 +217,7 @@ export default function App() {
     localStorage.setItem(`excel_erp_quotations_${currentStoreId}`, JSON.stringify(quotations));
     localStorage.setItem(`excel_erp_settings_${currentStoreId}`, JSON.stringify(settings));
     localStorage.setItem(`excel_erp_users_${currentStoreId}`, JSON.stringify(users));
+    localStorage.setItem(`excel_erp_permission_matrix_${currentStoreId}`, JSON.stringify(permissionMatrix));
 
     // 2. Set new active store ID
     setCurrentStoreId(storeId);
@@ -263,6 +264,9 @@ export default function App() {
     setUsers(us ? JSON.parse(us) : (storeId === 'store_default' ? INITIAL_USERS : [
       { id: `u_${Date.now()}_admin`, username: 'store_admin', fullName: 'Quản lý cửa hàng', role: 'ADMIN', password: '123', status: 'ACTIVE', storeId: storeId }
     ]));
+
+    const pm = localStorage.getItem(`excel_erp_permission_matrix_${storeId}`);
+    setPermissionMatrix(pm ? JSON.parse(pm) : DEFAULT_PERMISSION_MATRIX);
   };
 
   // Persist state to LocalStorage
@@ -323,8 +327,8 @@ export default function App() {
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('excel_erp_permission_matrix', JSON.stringify(permissionMatrix));
-  }, [permissionMatrix]);
+    localStorage.setItem(`excel_erp_permission_matrix_${currentStoreId}`, JSON.stringify(permissionMatrix));
+  }, [permissionMatrix, currentStoreId]);
 
   // Pre-fetch all stores and users from Supabase on mount to prevent lockouts on new machines
   useEffect(() => {
@@ -497,7 +501,8 @@ export default function App() {
     transactions,
     quotations,
     settings,
-    users
+    users,
+    permissionMatrix
   });
 
   const handleImportBackup = (imported: any) => {
@@ -511,6 +516,7 @@ export default function App() {
     if (imported.transactions) setTransactions(imported.transactions);
     if (imported.quotations) setQuotations(imported.quotations);
     if (imported.settings) setSettings(imported.settings);
+    if (imported.permissionMatrix) setPermissionMatrix(imported.permissionMatrix);
   };
 
   const handleResetDatabase = () => {
